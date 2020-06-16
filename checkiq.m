@@ -7,7 +7,12 @@
 % 2/9/2016
 
 if ~exist('external_call', 'var')
-    external_call = 0; % Check if called from another script
+    [st,~] = dbstack('-completenames');
+    if length(st) > 1
+        external_call = 1;
+    else
+        external_call = 0;
+    end
 end
 
 %---If running checkiq.m on its own---%

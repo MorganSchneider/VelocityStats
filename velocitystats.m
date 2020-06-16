@@ -29,54 +29,101 @@
 if exist('dumbass_flag', 'var')
     clear dumbass_flag
 end
+clear swp
+close all
 
 % Check if called from another script
-if ~exist('external_call', 'var')
-    external_call_main = 0;
+
+[st,~] = dbstack('-completenames');
+if length(st) > 1
+    external_call = 1;
+else
+    external_call = 0;
+    
     iq_plot_flag = 0; % Generate checkiq.m plots
     iq_save_flag = 1; % Save checkiq.m variables into .mat file
-    plot_flag = [0 0 0 0 0 0]; % Produce each plot from this script
+    plot_flag = [1 1 1 0 0 0]; % Produce each plot from this script
     plot_save_flag = 0; % Save plots from this script
-    LES_compare = 0; % Compare sim retrievals with LES ground truth
+    LES_flag = 0; % Compare sim retrievals with LES ground truth
     var_save_flag = 1; % Save swp and les variables
-else
-    external_call_main = external_call;
 end
 
-if ~exist('iq_plot_flag', 'var') || ~exist('iq_save_flag', 'var') || ~exist('plot_flag', 'var') ...
-        || ~exist('plot_save_flag', 'var') || ~exist('LES_compare', 'var') || ~exist('var_save_flag', 'var')
-    disp('You didn''t set all the flags, dumbass!')
-    dumbass_flag = 1;
-    return
-end
+external_call_main = external_call;
 
 
 if ~external_call_main
     base_dir = '/Users/schneider/Documents/';
-    dir_loc = [base_dir 'sims/']; % SimRadar output directory
+    dir_loc = [base_dir 'sims']; % SimRadar output directory
     sim_dir = uigetdir(dir_loc); % Location of IQ files
-    fig_dir = [base_dir 'imgs']; % Figure output directory
-    save_dir = [base_dir 'stats']; % Velocity calculation output directory
+    
+    dnum = input(['Number of debris? (Press enter for no debris) ', newline]);
+    concept = upper(input(['Simulation concept? ', newline], 's'));
+    
+    inds = strfind(sim_dir, '/');
+    sim_base = sim_dir(inds(5)+1 : inds(6)-1);
+    sim_date = sim_dir(inds(6)+1 : inds(7)-1);
+    if ~isempty(dnum)
+        dtype = sim_dir(inds(7)+7 : end);
+    else
+        dtype = [];
+    end
+else
+    if ~exist('iq_plot_flag', 'var') || ~exist('iq_save_flag', 'var') || ~exist('plot_flag', 'var') ...
+            || ~exist('plot_save_flag', 'var') || ~exist('LES_flag', 'var') || ~exist('var_save_flag', 'var')
+        missing_flags = setdiff({'iq_plot_flag', 'iq_save_flag', 'plot_flag', ...
+            'plot_save_flag', 'LES_flag', 'var_save_flag'}, who('*flag'));
+        disp('You didn''t set all the flags, dumbass!')
+        disp(missing_flags)
+        dumbass_flag = 1;
+        return
+    end
+    if ~exist('sim_base', 'var') || ~exist('sim_date', 'var') || ~exist('dnum', 'var') ...
+            || ~exist('dtype', 'var') || ~exist('concept', 'var')
+        missing_vars = setdiff({'sim_base', 'sim_date', 'dnum', ...
+            'dtype', 'concept'}, who('*'));
+        disp('You didn''t specify which files to use, stupid!')
+        disp(missing_vars)
+        dumbass_flag = 1;
+        return
+    end
 end
 
-addpath(genpath(dir_loc))
+if isnumeric(dtype)
+    dtype = num2str(dtype);
+end
+concept = upper(concept);
+
+sim_name = sim_base;
+sim_name(strfind(sim_name, '_')) = '-'; % rename sim_name for plot titles
+if ~isempty(dnum)
+    str = ['Sim: ' sim_name ', debris type ', dtype, ' n=', num2str(dnum)];
+    img_name_base = [sim_date '_d' dtype 'n' num2str(dnum) '_'];
+    fig_dir = [base_dir 'imgs/' sim_base '/d' dtype];
+    save_dir = [base_dir 'stats/' sim_base '/d' dtype];
+else
+    str = ['Sim: ' sim_name ', no debris'];
+    img_name_base = [sim_date '_nodebris_' concept '_'];
+    fig_dir = [base_dir 'imgs/' sim_base '/nd'];
+    save_dir = [base_dir 'stats/' sim_base '/nd'];
+end
+
+if ~exist(fig_dir, 'dir')
+    mkdir(fig_dir)
+    addpath(genpath(fig_dir))
+end
+if ~exist(save_dir, 'dir')
+    mkdir(save_dir)
+    addpath(genpath(save_dir))
+end
 savepath
 
-clear swp
-close all
+
+
 
 cd(sim_dir)
-dnum = input(['Number of debris? (Enter 0 for no debris) ', newline]);
-if dnum > 0
-    fname = ['*n', num2str(dnum)];
-    iqfiles = dir([fname, '.iq']);
-    inds = strfind(iqfiles(1).name, '-');
-    concept = upper(iqfiles(1).name(inds(2)+1 : inds(3)-1));
-elseif dnum == 0
-    concept = upper(input(['Simulation concept? ', newline], 's'));
-    fname = ['*-', concept, '-*'];
-    iqfiles = dir([fname, '.iq']);
-end
+
+fname = ['*-', concept, '-*', num2str(dnum)];
+iqfiles = dir([fname, '.iq']);
 
 nels = length(iqfiles);
 if ~isequal(length(iqfiles), length(dir([fname, '.mat'])))
@@ -88,35 +135,8 @@ if ~isequal(length(iqfiles), length(dir([fname, '.mat'])))
 end
 
 matfiles = dir([fname, '.mat']);
-inds = strfind(sim_dir, '/');
-sim_name = sim_dir(inds(5)+1 : inds(6)-1);
-sim_date = sim_dir(inds(6)+1 : inds(7)-1);
 
-inds = strfind(matfiles(1).name, '-');
-fig_dir = [fig_dir '/' sim_name '/' matfiles(1).name(inds(3)+1 : end-4)];
-if ~exist(fig_dir, 'dir')
-    mkdir(fig_dir)
-    addpath(genpath(fig_dir))
-    savepath
-end
 
-save_dir = [save_dir '/' sim_name '/' matfiles(1).name(inds(3)+1 : end-4)];
-if ~exist(save_dir, 'dir')
-    mkdir(save_dir)
-    addpath(genpath(save_dir))
-    savepath
-end
-
-sim_name(strfind(sim_name, '_')) = '-'; % rename sim_name for plot titles
-if strcmp(matfiles(1).name(inds(3)+1 : end-4), 'nodebris')
-    str = ['Sim: ' sim_name ', no debris'];
-    img_name_base = [sim_date '_nodebris_' concept '_'];
-else
-    nind = strfind(matfiles(1).name, 'n');
-    dtype = matfiles(1).name(inds(3)+2 : nind-1);
-    str = ['Sim: ' sim_name ', debris type ', num2str(dtype), ' n=', num2str(dnum)];
-    img_name_base = [sim_date '_d' num2str(dtype) 'n' num2str(dnum) '_'];
-end
 % if strcmp(sim_dir(inds(7)+1:end), 'nodebris')
 %     str = ['Sim: ' sim_name ', no debris'];
 %     img_name_base = [sim_date '_nodebris_' concept '_'];
@@ -153,8 +173,8 @@ end
 
 cd ~
 
-if LES_compare && ~exist('les', 'var')
-    load([dir_loc 'les/' sim_name '/LES_all.mat'])
+if LES_flag && ~exist('les', 'var')
+    load([dir_loc '/les/' sim_name '/LES_all.mat'])
     dvdx = gradient(v_LES,1) / (x_LES(2,1,1)-x_LES(1,1,1));
     dudy = gradient(u_LES,2) / (y_LES(1,2,1)-y_LES(1,1,1));
     les = struct('x', x_LES, 'y', y_LES, 'z', z_LES, 't', t_LES, 'axy', [],...
@@ -166,7 +186,7 @@ les.axy = struct('r', [], 'z', [], 'u', [], 'v', [], 'w', [], 't', []);
 m1 = ones(size(swp(1).x,1), size(swp(1).x,2));
 swp(n).vort_vol = repmat(m1, [1 1 nels]);
 for n = 1:nsweeps
-    if LES_compare == 1
+    if LES_flag == 1
         [swp(n).axy, elevs, les.axy(n)] = gbvtd(swp(n), les);
         
         tind(1) = find(les.t == les.axy(n).t(1));
@@ -346,7 +366,7 @@ for n = 1:nsweeps
     end
     
     
-    if LES_compare
+    if LES_flag
         if ~exist([fig_dir '/LES/'], 'dir')
             mkdir([fig_dir '/LES/'])
         end
@@ -626,7 +646,7 @@ if nsweeps > 1
     w_axy = u_axy(1:end-2,:,:);
     r_axy = u_axy;
     z_axy = u_axy;
-    if LES_compare
+    if LES_flag
         u_les = u_axy;
         v_les = u_axy;
         w_les = u_axy;
@@ -645,7 +665,7 @@ if nsweeps > 1
         r_axy(:,:,n) = swp(n).axy.r;
         z_axy(:,:,n) = swp(n).axy.z;
         
-        if LES_compare
+        if LES_flag
             u_les(:,:,n) = les.axy(n).u(1:r_dim,:);
             v_les(:,:,n) = les.axy(n).v(1:r_dim,:);
             w_les(:,:,n) = les.axy(n).w(1:r_dim,:);
@@ -697,7 +717,7 @@ if nsweeps > 1
         {'Mean_010deg','Max_010deg','Min_010deg','ErrorL_010deg','ErrorU_010deg'},...
         {'Mean_005deg','Max_005deg','Min_005deg','ErrorL_005deg','ErrorU_005deg'}};
     
-    if LES_compare
+    if LES_flag
         r_les = squeeze(mean(r_les, 3));
         z_les = squeeze(mean(z_les, 3));
         r_mean = (r_axy + r_les) / 2;
@@ -893,7 +913,7 @@ if nsweeps > 1
     end
     
     
-    if plot_flag(4) && LES_compare
+    if plot_flag(4) && LES_flag
         
         figure(10)
         axis tight manual
@@ -929,7 +949,7 @@ if nsweeps > 1
     end
     
     
-    if plot_flag(5) && LES_compare
+    if plot_flag(5) && LES_flag
         
         figure(11)
         axis tight manual
@@ -978,7 +998,7 @@ if nsweeps > 1
     end
     
     
-    if plot_flag(6) && LES_compare
+    if plot_flag(6) && LES_flag
         
         figure(12)
         axis tight manual
@@ -1169,11 +1189,11 @@ if var_save_flag
     
     inds = strfind(img_name_base, '_');
     
-    if LES_compare && nsweeps > 1
+    if LES_flag && nsweeps > 1
         save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'les', 'avg')
-    elseif LES_compare && nsweeps == 1
+    elseif LES_flag && nsweeps == 1
         save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'les')
-    elseif ~LES_compare && nsweeps > 1
+    elseif ~LES_flag && nsweeps > 1
         save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'avg')
     else
         save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp')
