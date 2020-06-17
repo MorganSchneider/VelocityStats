@@ -102,7 +102,7 @@ if ~isempty(dnum)
     save_dir = [base_dir 'stats/' sim_base '/d' dtype];
 else
     str = ['Sim: ' sim_name ', no debris'];
-    img_name_base = [sim_date '_nodebris_' concept '_'];
+    img_name_base = [sim_date '_ndnd_' concept '_'];
     fig_dir = [base_dir 'imgs/' sim_base '/nd'];
     save_dir = [base_dir 'stats/' sim_base '/nd'];
 end
@@ -1190,13 +1190,13 @@ if var_save_flag
     inds = strfind(img_name_base, '_');
     
     if LES_flag && nsweeps > 1
-        save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'les', 'avg')
+        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'les', 'avg')
     elseif LES_flag && nsweeps == 1
-        save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'les')
+        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'les')
     elseif ~LES_flag && nsweeps > 1
-        save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp', 'avg')
+        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'avg')
     else
-        save([img_name_base(inds(1)+1:inds(2)) concept '_volume-stats.mat'], 'swp')
+        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp')
     end
     
     cd ~
