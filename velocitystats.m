@@ -19,6 +19,10 @@
 % levels, actual values, statistics like stdev, etc
 % maybe try phiDP?
 
+% Take straight diff in Vr between debris/no debris at each gate, look for
+% correlation with rhohv, reflectivity, zdr, etc
+% also correlation with diff in spectrum width?
+
 % fig 1: delta V vs. height
 % fig 2: SimRadar retrieved pseudovorticity isosurfaces
 % fig 3: SimRadar GBVTD axisymmetric wind retrievals

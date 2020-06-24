@@ -1,20 +1,20 @@
 % Outer script for velocitystats.m
 clear
 
-new_sims_flag = 0; % Generate the volume-stats.mat files if they don't already exist
+new_sims_flag = 1; % Generate the volume-stats.mat files if they don't already exist
 
 
-% sim_bases: suctvort, suctvort_large, onecell, breakdown, torgen, moore
-% sim_dates: 200116, 200122, 200615, xxxxxx, xxxxxx, xxxxxx
-sim_base = 'suctvort_large';
-sim_date = '200122';
+% sim_bases: suctvort, suctvort_large, onecell, twocell, torgen, moore
+% sim_dates: 200116, 200122, 200615, 200621, 200622, xxxxxx
+sim_base = 'onecell';
+sim_date = '200615';
 base_dir = '/Users/schneider/Documents/'; % Directory where you run the script
 dir_loc = [base_dir 'sims']; % SimRadar output directory
 
 dtypes = [0 1 2 3 4 5 6];
 dnums = [1000 10000 100000 1000000];
 nd_concept = {'DCU'};
-dd_concept = 'DBCU';
+dd_concept = 'DCU';
 
 if new_sims_flag
     
@@ -116,7 +116,7 @@ for dt = dtypes(dtypes ~= 0)
         % suctvort: [-0.2, -0.1, 0.1, 0.2]
         % suctvort_large: [-0.2, -0.1, 0.1, 0.2]
         % onecell: 
-        % breakdown: 
+        % twocell: 
         % torgen: 
         % moore: 
         % 
