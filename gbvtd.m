@@ -42,7 +42,7 @@ for j = 1:nels % loop through elevations
     theta = vol.az(:,:,j); % Azimuth angle w.r.t. radar
     C = 0; % translational speed of tornado
     beta = 0; % direction of tornado motion
-    D = vol.vr(:,:,j); % Doppler velocity
+    D = vol.v(:,:,j); % Doppler velocity
     
     % Ew geometry
     a = sin(alpha - theta);
@@ -164,7 +164,7 @@ if nargin == 2
         v = mean(LES.v(:,:,zind(j),tind1:tind2), 4);
         w = mean(LES.w(:,:,zind(j),tind1:tind2), 4);
         
-        % Calculate axisymmetric component at each grid point
+        % Calculate radial and tangential component at each grid point
         ur_LES = u.*sin(phi) + v.*cos(phi);
         vr_LES = v.*sin(phi) - u.*cos(phi);
         

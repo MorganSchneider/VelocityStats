@@ -4,14 +4,14 @@ clear
 new_sims_flag = 1; % Generate the volume-stats.mat files if they don't already exist
 
 
-% sim_bases: suctvort, suctvort_large, onecell, twocell, torgen, moore
-% sim_dates: 200116, 200122, 200615, 200621, 200622, xxxxxx
-sim_base = 'onecell';
-sim_date = '200615';
+% sim_bases: suctvort, suctvort_large, onecell, twocell, torgen
+% sim_dates: 200116, 200122, 200615, 200621, 200622
+sim_base = 'twocell';
+sim_date = '200621';
 base_dir = '/Users/schneider/Documents/'; % Directory where you run the script
 dir_loc = [base_dir 'sims']; % SimRadar output directory
 
-dtypes = [0 1 2 3 4 5 6];
+dtypes = 0:6;
 dnums = [1000 10000 100000 1000000];
 nd_concept = {'DCU'};
 dd_concept = 'DCU';

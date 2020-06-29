@@ -141,20 +141,10 @@ end
 matfiles = dir([fname, '.mat']);
 
 
-% if strcmp(sim_dir(inds(7)+1:end), 'nodebris')
-%     str = ['Sim: ' sim_name ', no debris'];
-%     img_name_base = [sim_date '_nodebris_' concept '_'];
-% else
-%     dtype = sim_dir(inds(7)+7:end);
-%     nind = strfind(matfiles(1).name, 'n');
-%     str = ['Sim: ' sim_name ', debris type ', num2str(dtype), ' n=', num2str(dnum)];
-%     img_name_base = [sim_date '_d' num2str(dtype) 'n' num2str(dnum) '_'];
-% end
 
-
-
-swp = struct('el', [], 'az', [], 'r', [], 'dr', [], 'vr', [], 'x', [],...
-    'y', [], 'z', [], 'u', [], 'v', [], 'w', [], 'deltav', [], 'vort', [],...
+swp = struct('el', [], 'az', [], 'r', [], 'dr', [], 'v', [], 'x', [], ...
+    'y', [], 'z', [], 'uu', [], 'vv', [], 'ww', [], 'deltav', [], ...
+    'deltav90', [], 'deltav75', [], 'vrmax', [], 'vr90', [], 'vr75', [], ...
     'vort_vol', [], 'axy', []);
 swp.axy = struct('ur', [], 'vr', [], 'wr', []);
 
@@ -167,7 +157,7 @@ for i = 1:nels
         swp(n).el(i) = dat.el_deg(1,1);
         swp(n).dr(i) = dat.params.dr;
         swp(n).t = dat.scan_time((n-1)*np+1 : n*np);
-        swp(n).vr(:,:,i) = vr(:,:,n);
+        swp(n).v(:,:,i) = vr(:,:,n);
         swp(n).x(:,:,i) = xx;
         swp(n).y(:,:,i) = yy;
         [swp(n).az(:,:,i), swp(n).r(:,:,i)] = meshgrid(az_rad, r);
@@ -178,17 +168,58 @@ end
 cd ~
 
 if LES_flag && ~exist('les', 'var')
-    load([dir_loc '/les/' sim_name '/LES_all.mat'])
-    dvdx = gradient(v_LES,1) / (x_LES(2,1,1)-x_LES(1,1,1));
-    dudy = gradient(u_LES,2) / (y_LES(1,2,1)-y_LES(1,1,1));
-    les = struct('x', x_LES, 'y', y_LES, 'z', z_LES, 't', t_LES, 'axy', [],...
-        'u', u_LES, 'v', v_LES, 'w', w_LES, 'tke', tke_LES, 'p', p_LES, 'vort', dvdx - dudy);
+    % Load time variable ONLY from LES_all.mat to time-match between LES and SimRadar
+    load([dir_loc '/les/' sim_name '/LES_all.mat'], 't_LES')
+    dt1 = abs(t_LES - swp(1).t(1));
+    dt2 = abs(t_LES - swp(nsweeps).t(end));
+    ti1 = find(dt1 == min(dt1,[],'all'));
+    ti2 = find(dt2 == min(dt2,[],'all'));
+    fn1 = ceil(ti1 / 10);
+    fn2 = ceil(ti2 / 10);
+    
+    lesgrid = load([dir_loc '/les' sim_name '/grid.mat'], {'Xmf', 'Ymf', 'Zmf'});
+    x_LES = lesgrid.Xmf;
+    y_LES = lesgrid.Ymf;
+    z_LES = lesgrid.Zmf;
+    
+    lesdata = load([dir_loc '/les' sim_name '/LES_' num2str(fn1) '.mat'], ...
+        {'time', 'ustore', 'vstore', 'wstore', 'tkestore', 'pstore'});
+    t_LES = lesdata.time;
+    u_LES = lesdata.ustore;
+    v_LES = lesdata.vstore;
+    w_LES = lesdata.wstore;
+    tke_LES = lesdata.tkestore;
+    p_LES = lesdata.pstore;
+    if fn1 ~= fn2
+        for fdx = fn1+1: fn2
+            lesdata = load([dir_loc '/les' sim_name '/LES_' num2str(fdx) '.mat'], ...
+                {'time', 'ustore', 'vstore', 'wstore', 'tkestore', 'pstore'});
+            t_LES = cat(2, t_LES, lesdata.time);
+            u_LES = cat(4, u_LES, lesdata.ustore);
+            v_LES = cat(4, v_LES, lesdata.vstore);
+            w_LES = cat(4, w_LES, lesdata.wstore);
+            tke_LES = cat(4, tke_LES, lesdata.tkestore);
+            p_LES = cat(4, p_LES, lesdata.pstore);
+        end
+    end
+    
+    les = struct('x', x_LES, 'y', y_LES, 'z', z_LES, 't', t_LES, 'u', u_LES,...
+        'v', v_LES, 'w', w_LES, 'tke', tke_LES, 'p', p_LES, 'ur', [], 'vr', [],...
+        'vrmax', [], 'vr90', [], 'vr75', [], 'vort', []);
+    les.axy = struct('r', [], 'z', [], 'u', [], 'v', [], 'w', [], 't', []);
+    
+    V = sqrt(u_LES.^2 + v_LES.^2);
+    les.vrmax = max(V,[],'all');
+    les.vr90 = prctile(V,90,'all');
+    les.vr75 = prctile(V,75,'all');
+    dvdx = gradient(v_LES,1) / (x_LES(2,1,1) - x_LES(1,1,1));
+    dudy = gradient(u_LES,2) / (y_LES(1,2,1) - y_LES(1,1,1));
+    les.vort = dvdx - dudy;
 end
-les.axy = struct('r', [], 'z', [], 'u', [], 'v', [], 'w', [], 't', []);
+
 
 [az_vol, r_vol, el_vol] = meshgrid(az_rad, r, swp(1).el);
-m1 = ones(size(swp(1).x,1), size(swp(1).x,2));
-swp(n).vort_vol = repmat(m1, [1 1 nels]);
+swp(n).vort_vol = ones(size(swp(1).x,1), size(swp(1).x,2), nels);
 for n = 1:nsweeps
     if LES_flag == 1
         [swp(n).axy, elevs, les.axy(n)] = gbvtd(swp(n), les);
@@ -197,20 +228,30 @@ for n = 1:nsweeps
         tind(2) = find(les.t == les.axy(n).t(2));
         dx = les.x(2,1,1) - les.x(1,1,1);
         dy = dx;
-        dv = gradient(les.v(:,:,:,tind(1):tind(2)),1);
-        du = gradient(les.u(:,:,:,tind(1):tind(2)),2);
+        dv = gradient(les.v(:,:,:,tind(1):tind(2)), 1);
+        du = gradient(les.u(:,:,:,tind(1):tind(2)), 2);
         les.vort(:,:,:,n) = mean(dv/dx - du/dy, 4);
     else
         [swp(n).axy, elevs] = gbvtd(swp(n));
     end
+    
+    v_in = -1 * swp(n).v;
+    v_in(v_in <= 0) = NaN;
+    v_out = swp(n).v;
+    v_out(v_out <= 0) = NaN;
     for i = 1:nels
-        swp(n).deltav(i) = max(swp(n).vr(:,:,i), [], 'all') - min(swp(n).vr(:,:,i), [], 'all');
-        vort = gradient(swp(n).vr(:,:,i), 2) ./...
+        swp(n).deltav(i) = max(v_out(:,:,i),[],'all') + max(v_in(:,:,i),[],'all'); % maximum delta V
+        swp(n).deltav90(i) = prctile(v_out(:,:,i),90,'all') + prctile(v_in(:,:,i),90,'all');
+        swp(n).deltav75(i) = prctile(v_out(:,:,i),75,'all') + prctile(v_in(:,:,i),75,'all');
+        swp(n).vrmax(i) = swp(n).deltav(i) / 2; % maximum rotational velocity
+        swp(n).vr90(i) = swp(n).deltav90(i) / 2;
+        swp(n).vr75(i) = swp(n).deltav75(i) / 2;
+        vort = gradient(swp(n).v(:,:,i), 2) ./...
             (swp(n).r(:,:,i) .* gradient(swp(n).az(:,:,i), 2));
-        swp(n).u(:,:,i) = elevs(i).u;
-        swp(n).v(:,:,i) = elevs(i).v;
-        swp(n).w(:,:,i) = elevs(i).w;
-        swp(n).vort_vol(:,:,i) = m1 .* vort;
+        swp(n).uu(:,:,i) = elevs(i).u;
+        swp(n).vv(:,:,i) = elevs(i).v;
+        swp(n).ww(:,:,i) = elevs(i).w;
+        swp(n).vort_vol(:,:,i) = ones(size(swp(1).x,1), size(swp(1).x,2)) .* vort;
     end
 end
 
@@ -641,6 +682,13 @@ if nsweeps > 1
     
     
     dv = zeros(nsweeps, nels);
+    dv95 = dv;
+    dv90 = dv;
+    dv75 = dv;
+    vrm = dv;
+    vr95 = dv;
+    vr90 = dv;
+    vr75 = dv;
     vort_vol = zeros(length(r), length(az_rad), nels, nsweeps);
     
     r_dim = size(swp(1).axy.r, 1);
@@ -661,6 +709,11 @@ if nsweeps > 1
     
     for n = 1:nsweeps
         dv(n,:) = swp(n).deltav;
+        dv90(n,:) = swp(n).deltav90;
+        dv75(n,:) = swp(n).deltav75;
+        vrm(n,:) = swp(n).vrmax;
+        vr90(n,:) = swp(n).vr90;
+        vr75(n,:) = swp(n).vr75;
         vort_vol(:,:,:,n) = swp(n).vort_vol;
         
         u_axy(:,:,n) = swp(n).axy.u;
@@ -679,36 +732,37 @@ if nsweeps > 1
             vort_les(:,:,:,n) = les.axy(n).vort_vol;
         end
     end
-    elevs = swp(1).el;
-    dv_err = std(dv,1);
-    dv_mean = squeeze(mean(dv,1));
-    dv_max = squeeze(max(dv,[],1));
-    dv_min = squeeze(min(dv,[],1));
-    
-    avg.swp.dv = dv_mean;
-    avg.swp.dv_max = dv_max;
-    avg.swp.dv_min = dv_min;
-    avg.swp.dv_err = dv_err;
-    
-    vort_mean = squeeze(mean(vort_vol, 4));
-    vort_max = squeeze(max(vort_vol, 4));
-    vort_min = squeeze(min(vort_vol, 4));
-    
-    r_axy = squeeze(mean(r_axy, 3));
-    z_axy = squeeze(mean(z_axy, 3));
-    u_mean = squeeze(mean(u_axy, 3));
-    v_mean = squeeze(mean(v_axy, 3));
-    w_mean = squeeze(mean(w_axy, 3));
-    
-    avg.swp = struct('r', r_axy, 'z', z_axy, 'u', u_mean, 'v', v_mean, 'w', w_mean, ...
-        'els', elevs, 'dv', dv_mean, 'vort', vort_mean, 'az_vol', az_vol, ...
+    avg.swp = struct('r', [], 'z', [], 'u', [], 'v', [], 'w', [], ...
+        'els', [], 'dv', [], 'vort', [], 'az_vol', az_vol, ...
         'r_vol', r_vol, 'el_vol', el_vol);
+    
+    avg.swp.els = swp(1).el;
+    avg.swp.dv_err = std(dv,1);
+    avg.swp.dv = squeeze(mean(dv,1));
+    avg.swp.dv_max = squeeze(max(dv,[],1));
+    avg.swp.dv_min = squeeze(min(dv,[],1));
+    avg.swp.dv90 = squeeze(mean(dv90,1));
+    avg.swp.dv75 = squeeze(mean(dv75,1));
+    avg.swp.vrm = squeeze(mean(vrm,1));
+    avg.swp.vr90 = squeeze(mean(vr90,1));
+    avg.swp.vr75 = squeeze(mean(vr75,1));
+    
+    avg.swp.vort = squeeze(mean(vort_vol, 4));
+    avg.swp.vort_max = squeeze(max(vort_vol, 4));
+    avg.swp.vort_min = squeeze(min(vort_vol, 4));
+    
+    avg.swp.r = squeeze(mean(r_axy, 3));
+    avg.swp.z = squeeze(mean(z_axy, 3));
+    avg.swp.u = squeeze(mean(u_axy, 3));
+    avg.swp.v = squeeze(mean(v_axy, 3));
+    avg.swp.w = squeeze(mean(w_axy, 3));
+    
     
     %---Turn this into a table---%
     
-    UT = VelStatsMakeTable(r_axy, u_axy);
-    VT = VelStatsMakeTable(r_axy, v_axy);
-    WT = VelStatsMakeTable(r_axy(2:r_dim-1,:), w_axy);
+    UT = VelStatsMakeTable(avg.swp.r, u_axy);
+    VT = VelStatsMakeTable(avg.swp.r, v_axy);
+    WT = VelStatsMakeTable(avg.swp.r(2:r_dim-1,:), w_axy);
     
     vars = {{'Mean_050deg','Max_050deg','Min_050deg','ErrorL_050deg','ErrorU_050deg'},...
         {'Mean_045deg','Max_045deg','Min_045deg','ErrorL_045deg','ErrorU_045deg'},...
@@ -724,8 +778,8 @@ if nsweeps > 1
     if LES_flag
         r_les = squeeze(mean(r_les, 3));
         z_les = squeeze(mean(z_les, 3));
-        r_mean = (r_axy + r_les) / 2;
-        z_mean = (z_axy + z_les) / 2;
+        r_mean = (avg.swp.r + r_les) / 2;
+        z_mean = (avg.swp.z + z_les) / 2;
         
         u_diff = u_axy - u_les;
         v_diff = v_axy - v_les;
@@ -759,10 +813,10 @@ if nsweeps > 1
         
         figure(7)
         axis tight manual
-        errorbar(dv_mean, elevs, dv_err, 'horizontal')
+        errorbar(avg.swp.dv, avg.swp.els, avg.swp.dv_err, 'horizontal')
         hold on
-            plot(dv_max, elevs, '.k')
-            plot(dv_min, elevs, '.k')
+            plot(avg.swp.dv_max, avg.swp.els, '.k')
+            plot(avg.swp.dv_min, avg.swp.els, '.k')
         hold off
         xlabel('$\overline{\DeltaV_{max}} (m/s)$', 'Interpreter', 'Latex')
         ylabel('Elev. angle \theta (^{o})')
@@ -781,14 +835,14 @@ if nsweeps > 1
         
         figure(8)
         axis tight manual
-        [f,v] = isosurface(az_vol, r_vol, el_vol, vort_mean, 0.9); %1.5
+        [f,v] = isosurface(avg.swp.az_vol, avg.swp.r_vol, avg.swp.el_vol, avg.swp.vort, 0.9); %1.5
         patch('Vertices', v, 'Faces', f, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', 0.5)
         hold on
-            [f,v] = isosurface(az_vol, r_vol, el_vol, vort_mean, 0.6); %1.0
+            [f,v] = isosurface(avg.swp.az_vol, avg.swp.r_vol, avg.swp.el_vol, avg.swp.vort, 0.6); %1.0
             patch('Vertices', v, 'Faces', f, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', 0.2)
-            [f,v] = isosurface(az_vol, r_vol, el_vol, vort_mean, 0.3); %0.5
+            [f,v] = isosurface(avg.swp.az_vol, avg.swp.r_vol, avg.swp.el_vol, avg.swp.vort, 0.3); %0.5
             patch('Vertices', v, 'Faces', f, 'FaceColor', 'magenta', 'EdgeColor', 'none', 'FaceAlpha', 0.1)
-            [f,v] = isosurface(az_vol, r_vol, el_vol, vort_mean, 0.0); %0.1
+            [f,v] = isosurface(avg.swp.az_vol, avg.swp.r_vol, avg.swp.el_vol, avg.swp.vort, 0.0); %0.1
             patch('Vertices', v, 'Faces', f, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.03)
         hold off
         
@@ -818,8 +872,8 @@ if nsweeps > 1
         figure(9)
         axis tight manual
         c = subplot(1,3,1);
-        pcolor(r_axy, z_axy, u_mean)
-        caxis([-1 1] * max(abs(u_mean),[],'all'))
+        pcolor(avg.swp.r, avg.swp.z, avg.swp.u)
+        caxis([-1 1] * max(abs(avg.swp.u),[],'all'))
         colormap(c, blib('rbmap'))
         colorbar
         shading flat
@@ -829,8 +883,8 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(2) = subplot(1,3,2);
-        pcolor(r_axy, z_axy, v_mean)
-        caxis([-1 1] * max(abs(v_mean),[],'all'))
+        pcolor(avg.swp.r, avg.swp.z, avg.swp.v)
+        caxis([-1 1] * max(abs(avg.swp.v),[],'all'))
         colormap(c(2), blib('rbmap'))
         colorbar
         shading flat
@@ -840,8 +894,8 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(3) = subplot(1,3,3);
-        pcolor(r_axy(2:end-1,:), z_axy(2:end-1,:), w_mean)
-        caxis([-1 1] * max(abs(w_mean),[],'all'))
+        pcolor(avg.swp.r(2:end-1,:), avg.swp.z(2:end-1,:), avg.swp.w)
+        caxis([-1 1] * max(abs(avg.swp.w),[],'all'))
         colormap(c(3), blib('rbmap'))
         colorbar
         shading flat
@@ -1007,8 +1061,8 @@ if nsweeps > 1
         figure(12)
         axis tight manual
         c = subplot(3,3,1);
-        pcolor(r_axy, z_axy, u_mean)
-        caxis([-1 1] * max(abs(u_mean),[],'all'))
+        pcolor(avg.swp.r, avg.swp.z, avg.swp.u)
+        caxis([-1 1] * max(abs(avg.swp.u),[],'all'))
         colormap(c, blib('rbmap'))
         colorbar
         shading flat
@@ -1018,8 +1072,8 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(2) = subplot(3,3,2);
-        pcolor(r_axy, z_axy, v_mean)
-        caxis([-1 1] * max(abs(v_mean),[],'all'))
+        pcolor(avg.swp.r, avg.swp.z, avg.swp.v)
+        caxis([-1 1] * max(abs(avg.swp.v),[],'all'))
         colormap(c(2), blib('rbmap'))
         colorbar
         shading flat
@@ -1029,8 +1083,8 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(3) = subplot(3,3,3);
-        pcolor(r_axy(2:end-1,:), z_axy(2:end-1,:), w_mean)
-        caxis([-1 1] * max(abs(w_mean),[],'all'))
+        pcolor(avg.swp.r(2:end-1,:), avg.swp.z(2:end-1,:), avg.swp.w)
+        caxis([-1 1] * max(abs(avg.swp.w),[],'all'))
         colormap(c(3), blib('rbmap'))
         colorbar
         shading flat
