@@ -33,7 +33,7 @@
 if exist('dumbass_flag', 'var')
     clear dumbass_flag
 end
-clear swp
+clear swp les
 close all
 
 % Check if called from another script
@@ -177,13 +177,14 @@ if LES_flag && ~exist('les', 'var')
     fn1 = ceil(ti1 / 10);
     fn2 = ceil(ti2 / 10);
     
-    lesgrid = load([dir_loc '/les' sim_name '/grid.mat'], {'Xmf', 'Ymf', 'Zmf'});
+    gridvars = {'Xmf', 'Ymf', 'Zmf'};
+    lesgrid = load([dir_loc '/les/' sim_name '/grid.mat'], gridvars{:});
     x_LES = lesgrid.Xmf;
     y_LES = lesgrid.Ymf;
     z_LES = lesgrid.Zmf;
     
-    lesdata = load([dir_loc '/les' sim_name '/LES_' num2str(fn1) '.mat'], ...
-        {'time', 'ustore', 'vstore', 'wstore', 'tkestore', 'pstore'});
+    datavars = {'time', 'ustore', 'vstore', 'wstore', 'tkestore', 'pstore'};
+    lesdata = load([dir_loc '/les/' sim_name '/LES_' num2str(fn1) '.mat'], datavars{:});
     t_LES = lesdata.time;
     u_LES = lesdata.ustore;
     v_LES = lesdata.vstore;
@@ -192,8 +193,7 @@ if LES_flag && ~exist('les', 'var')
     p_LES = lesdata.pstore;
     if fn1 ~= fn2
         for fdx = fn1+1: fn2
-            lesdata = load([dir_loc '/les' sim_name '/LES_' num2str(fdx) '.mat'], ...
-                {'time', 'ustore', 'vstore', 'wstore', 'tkestore', 'pstore'});
+            lesdata = load([dir_loc '/les/' sim_name '/LES_' num2str(fdx) '.mat'], datavars{:});
             t_LES = cat(2, t_LES, lesdata.time);
             u_LES = cat(4, u_LES, lesdata.ustore);
             v_LES = cat(4, v_LES, lesdata.vstore);
@@ -243,9 +243,6 @@ for n = 1:nsweeps
         swp(n).deltav(i) = max(v_out(:,:,i),[],'all') + max(v_in(:,:,i),[],'all'); % maximum delta V
         swp(n).deltav90(i) = prctile(v_out(:,:,i),90,'all') + prctile(v_in(:,:,i),90,'all');
         swp(n).deltav75(i) = prctile(v_out(:,:,i),75,'all') + prctile(v_in(:,:,i),75,'all');
-        swp(n).vrmax(i) = swp(n).deltav(i) / 2; % maximum rotational velocity
-        swp(n).vr90(i) = swp(n).deltav90(i) / 2;
-        swp(n).vr75(i) = swp(n).deltav75(i) / 2;
         vort = gradient(swp(n).v(:,:,i), 2) ./...
             (swp(n).r(:,:,i) .* gradient(swp(n).az(:,:,i), 2));
         swp(n).uu(:,:,i) = elevs(i).u;
@@ -554,7 +551,7 @@ for n = 1:nsweeps
             
             c(2) = subplot(3,3,2);
             pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.v)
-            caxis([-50 50])
+            caxis([-30 30])
             colormap(c(2), blib('rbmap'))
             colorbar
             shading flat
@@ -565,7 +562,7 @@ for n = 1:nsweeps
             
             c(3) = subplot(3,3,3);
             pcolor(swp(n).axy.r(2:end-1,:), swp(n).axy.z(2:end-1,:), swp(n).axy.w)
-            caxis([-40 40])
+            caxis([-30 30])
             colormap(c(3), blib('rbmap'))
             colorbar
             shading flat
@@ -587,7 +584,7 @@ for n = 1:nsweeps
             
             c(5) = subplot(3,3,5);
             pcolor(les.axy(n).r, les.axy(n).z, les.axy(n).v)
-            caxis([-50 50])
+            caxis([-30 30])
             colormap(c(5), blib('rbmap'))
             colorbar
             shading flat
@@ -598,7 +595,7 @@ for n = 1:nsweeps
             
             c(6) = subplot(3,3,6);
             pcolor(les.axy(n).r, les.axy(n).z, les.axy(n).w)
-            caxis([-40 40])
+            caxis([-30 30])
             colormap(c(6), blib('rbmap'))
             colorbar
             shading flat
@@ -608,10 +605,10 @@ for n = 1:nsweeps
             ylabel('Height A.G.L. (m)')
             
             c(7) = subplot(3,3,7);
-            r_dim = size(swp(n).axy.u,1);
-            rmean = (swp(n).axy.r + les.axy(n).r(1:r_dim,:)) / 2;
-            zmean = (swp(n).axy.z + les.axy(n).z(1:r_dim,:)) / 2;
-            udiff = swp(n).axy.u - les.axy(n).u(1:r_dim,:);
+            r_dim = min([size(swp(n).axy.u,1), size(les.axy(n).u,1)]);
+            rmean = (swp(n).axy.r(1:r_dim,:) + les.axy(n).r(1:r_dim,:)) / 2;
+            zmean = (swp(n).axy.z(1:r_dim,:) + les.axy(n).z(1:r_dim,:)) / 2;
+            udiff = swp(n).axy.u(1:r_dim,:) - les.axy(n).u(1:r_dim,:);
             pcolor(rmean, zmean, udiff)
             %         pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.u - ugrid)
             colormap(c(7), blib('rbmap'))
@@ -624,7 +621,7 @@ for n = 1:nsweeps
             ylabel('Height A.G.L. (m)')
             
             c(8) = subplot(3,3,8);
-            vdiff = swp(n).axy.v - les.axy(n).v(1:r_dim,:);
+            vdiff = swp(n).axy.v(1:r_dim,:) - les.axy(n).v(1:r_dim,:);
             pcolor(rmean, zmean, vdiff)
             %         pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.v - vgrid)
             caxis([-30 30])
@@ -637,7 +634,7 @@ for n = 1:nsweeps
             ylabel('Height A.G.L. (m)')
             
             c(9) = subplot(3,3,9);
-            wdiff = swp(n).axy.w - les.axy(n).w(2:r_dim-1,:);
+            wdiff = swp(n).axy.w(2:r_dim-1,:) - les.axy(n).w(2:r_dim-1,:);
             pcolor(rmean(2:end-1,:), zmean(2:end-1,:), wdiff)
             %         pcolor(swp(n).axy.r(2:end-1,:), swp(n).axy.z(2:end-1,:), swp(n).axy.w - wgrid(2:end-1,:))
             caxis([-30 30])
@@ -682,20 +679,15 @@ if nsweeps > 1
     
     
     dv = zeros(nsweeps, nels);
-    dv95 = dv;
     dv90 = dv;
     dv75 = dv;
-    vrm = dv;
-    vr95 = dv;
-    vr90 = dv;
-    vr75 = dv;
     vort_vol = zeros(length(r), length(az_rad), nels, nsweeps);
     
-    r_dim = size(swp(1).axy.r, 1);
+    r_dim = min([size(swp(1).axy.r,1), size(les.axy(1).r,1)]);
     
     u_axy = zeros(r_dim, nels, nsweeps);
     v_axy = u_axy;
-    w_axy = u_axy(1:end-2,:,:);
+    w_axy = u_axy(1:end-1,:,:);
     r_axy = u_axy;
     z_axy = u_axy;
     if LES_flag
@@ -711,16 +703,13 @@ if nsweeps > 1
         dv(n,:) = swp(n).deltav;
         dv90(n,:) = swp(n).deltav90;
         dv75(n,:) = swp(n).deltav75;
-        vrm(n,:) = swp(n).vrmax;
-        vr90(n,:) = swp(n).vr90;
-        vr75(n,:) = swp(n).vr75;
         vort_vol(:,:,:,n) = swp(n).vort_vol;
         
-        u_axy(:,:,n) = swp(n).axy.u;
-        v_axy(:,:,n) = swp(n).axy.v;
-        w_axy(:,:,n) = swp(n).axy.w;
-        r_axy(:,:,n) = swp(n).axy.r;
-        z_axy(:,:,n) = swp(n).axy.z;
+        u_axy(:,:,n) = swp(n).axy.u(1:r_dim,:);
+        v_axy(:,:,n) = swp(n).axy.v(1:r_dim,:);
+        w_axy(:,:,n) = swp(n).axy.w(1:r_dim-1,:);
+        r_axy(:,:,n) = swp(n).axy.r(1:r_dim,:);
+        z_axy(:,:,n) = swp(n).axy.z(1:r_dim,:);
         
         if LES_flag
             u_les(:,:,n) = les.axy(n).u(1:r_dim,:);
@@ -743,9 +732,6 @@ if nsweeps > 1
     avg.swp.dv_min = squeeze(min(dv,[],1));
     avg.swp.dv90 = squeeze(mean(dv90,1));
     avg.swp.dv75 = squeeze(mean(dv75,1));
-    avg.swp.vrm = squeeze(mean(vrm,1));
-    avg.swp.vr90 = squeeze(mean(vr90,1));
-    avg.swp.vr75 = squeeze(mean(vr75,1));
     
     avg.swp.vort = squeeze(mean(vort_vol, 4));
     avg.swp.vort_max = squeeze(max(vort_vol, 4));
@@ -762,7 +748,7 @@ if nsweeps > 1
     
     UT = VelStatsMakeTable(avg.swp.r, u_axy);
     VT = VelStatsMakeTable(avg.swp.r, v_axy);
-    WT = VelStatsMakeTable(avg.swp.r(2:r_dim-1,:), w_axy);
+    WT = VelStatsMakeTable(avg.swp.r(1:r_dim-1,:), w_axy);
     
     vars = {{'Mean_050deg','Max_050deg','Min_050deg','ErrorL_050deg','ErrorU_050deg'},...
         {'Mean_045deg','Max_045deg','Min_045deg','ErrorL_045deg','ErrorU_045deg'},...
@@ -783,15 +769,15 @@ if nsweeps > 1
         
         u_diff = u_axy - u_les;
         v_diff = v_axy - v_les;
-        w_diff = w_axy - w_les(2:r_dim-1,:,:);
+        w_diff = w_axy - w_les(1:r_dim-1,:,:);
         
         u_diff_mean = squeeze(mean(u_axy - u_les, 3));
         v_diff_mean = squeeze(mean(v_axy - v_les, 3));
-        w_diff_mean = squeeze(mean(w_axy - w_les(2:r_dim-1,:,:), 3));
+        w_diff_mean = squeeze(mean(w_axy - w_les(1:r_dim-1,:,:), 3));
         
         UdiffT = VelStatsMakeTable(r_mean, u_diff);
         VdiffT = VelStatsMakeTable(r_mean, v_diff);
-        WdiffT = VelStatsMakeTable(r_mean(2:r_dim-1,:), w_diff);
+        WdiffT = VelStatsMakeTable(r_mean(1:r_dim-1,:), w_diff);
         
         u_les = squeeze(mean(u_les, 3));
         v_les = squeeze(mean(v_les, 3));
@@ -894,7 +880,7 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(3) = subplot(1,3,3);
-        pcolor(avg.swp.r(2:end-1,:), avg.swp.z(2:end-1,:), avg.swp.w)
+        pcolor(avg.swp.r(1:end-1,:), avg.swp.z(1:end-1,:), avg.swp.w)
         caxis([-1 1] * max(abs(avg.swp.w),[],'all'))
         colormap(c(3), blib('rbmap'))
         colorbar
@@ -1083,7 +1069,7 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(3) = subplot(3,3,3);
-        pcolor(avg.swp.r(2:end-1,:), avg.swp.z(2:end-1,:), avg.swp.w)
+        pcolor(avg.swp.r(1:end-1,:), avg.swp.z(1:end-1,:), avg.swp.w)
         caxis([-1 1] * max(abs(avg.swp.w),[],'all'))
         colormap(c(3), blib('rbmap'))
         colorbar
@@ -1149,7 +1135,7 @@ if nsweeps > 1
         ylabel('Height A.R.L. (m)')
         
         c(9) = subplot(3,3,9);
-        pcolor(r_mean(2:end-1,:), z_mean(2:end-1,:), w_diff_mean)
+        pcolor(r_mean(1:end-1,:), z_mean(1:end-1,:), w_diff_mean)
         caxis([-1 1] * max(abs(w_diff_mean),[],'all'))
         colormap(c(9), blib('rbmap'))
         colorbar
@@ -1170,71 +1156,71 @@ if nsweeps > 1
         end
         
         
-        figure(13)
-        axis tight manual
-        s = stackedplot(UdiffT,vars,'XVariable','RadialDistance','Title','\DeltaU stats');
-        for el = 1:nels
-            s.LineProperties(el).PlotType = 'plot';
-            s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
-            s.LineProperties(el).Color = [0 0 1];
-            s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
-            s.LineProperties(el).MarkerFaceColor = [1 1 1];
-            s.LineProperties(el).MarkerEdgeColor = [0 0 0];
-        end
-        
-        axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
-        title(str, 'FontSize', 14);
-        axis off
-        % set(gcf, 'Position', [left_bound bottom_bound width height]
-        set(gcf,'Units','inches','Position',[10 10 14 5])
-        
-        if plot_save_flag
-            print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-ustats'], '-dpng')
-        end
-        
-        figure(14)
-        axis tight manual
-        s = stackedplot(VdiffT,vars,'XVariable','RadialDistance','Title','\DeltaV stats');
-        for el = 1:nels
-            s.LineProperties(el).PlotType = 'plot';
-            s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
-            s.LineProperties(el).Color = [0 0 1];
-            s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
-            s.LineProperties(el).MarkerFaceColor = [1 1 1];
-            s.LineProperties(el).MarkerEdgeColor = [0 0 0];
-        end
-        
-        axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
-        title(str, 'FontSize', 14);
-        axis off
-        % set(gcf, 'Position', [left_bound bottom_bound width height]
-        set(gcf,'Units','inches','Position',[10 10 14 5])
-        
-        if plot_save_flag
-            print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-vstats'], '-dpng')
-        end
-        
-        figure(15)
-        axis tight manual
-        s = stackedplot(WdiffT,vars,'XVariable','RadialDistance','Title','\DeltaW stats');
-        for el = 1:nels
-            s.LineProperties(el).PlotType = 'plot';
-            s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
-            s.LineProperties(el).Color = [0 0 1];
-            s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
-            s.LineProperties(el).MarkerFaceColor = [01 1 1];
-            s.LineProperties(el).MarkerEdgeColor = [0 0 0];
-        end
-        
-        axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
-        title(str, 'FontSize', 14);
-        axis off
-        % set(gcf, 'Position', [left_bound bottom_bound width height]
-        set(gcf,'Units','inches','Position',[10 10 14 5])
-        
-        if plot_save_flag
-            print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-wstats'], '-dpng')
-        end
+%         figure(13)
+%         axis tight manual
+%         s = stackedplot(UdiffT,vars,'XVariable','RadialDistance','Title','\DeltaU stats');
+%         for el = 1:nels
+%             s.LineProperties(el).PlotType = 'plot';
+%             s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
+%             s.LineProperties(el).Color = [0 0 1];
+%             s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
+%             s.LineProperties(el).MarkerFaceColor = [1 1 1];
+%             s.LineProperties(el).MarkerEdgeColor = [0 0 0];
+%         end
+%         
+%         axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
+%         title(str, 'FontSize', 14);
+%         axis off
+%         % set(gcf, 'Position', [left_bound bottom_bound width height]
+%         set(gcf,'Units','inches','Position',[10 10 14 5])
+%         
+%         if plot_save_flag
+%             print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-ustats'], '-dpng')
+%         end
+%         
+%         figure(14)
+%         axis tight manual
+%         s = stackedplot(VdiffT,vars,'XVariable','RadialDistance','Title','\DeltaV stats');
+%         for el = 1:nels
+%             s.LineProperties(el).PlotType = 'plot';
+%             s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
+%             s.LineProperties(el).Color = [0 0 1];
+%             s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
+%             s.LineProperties(el).MarkerFaceColor = [1 1 1];
+%             s.LineProperties(el).MarkerEdgeColor = [0 0 0];
+%         end
+%         
+%         axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
+%         title(str, 'FontSize', 14);
+%         axis off
+%         % set(gcf, 'Position', [left_bound bottom_bound width height]
+%         set(gcf,'Units','inches','Position',[10 10 14 5])
+%         
+%         if plot_save_flag
+%             print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-vstats'], '-dpng')
+%         end
+%         
+%         figure(15)
+%         axis tight manual
+%         s = stackedplot(WdiffT,vars,'XVariable','RadialDistance','Title','\DeltaW stats');
+%         for el = 1:nels
+%             s.LineProperties(el).PlotType = 'plot';
+%             s.LineProperties(el).LineStyle = {'-', ':', ':', 'none', 'none'};
+%             s.LineProperties(el).Color = [0 0 1];
+%             s.LineProperties(el).Marker = {'none', 'none', 'none', 'o', 'o'};
+%             s.LineProperties(el).MarkerFaceColor = [01 1 1];
+%             s.LineProperties(el).MarkerEdgeColor = [0 0 0];
+%         end
+%         
+%         axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
+%         title(str, 'FontSize', 14);
+%         axis off
+%         % set(gcf, 'Position', [left_bound bottom_bound width height]
+%         set(gcf,'Units','inches','Position',[10 10 14 5])
+%         
+%         if plot_save_flag
+%             print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-wstats'], '-dpng')
+%         end
     end
 end
 
