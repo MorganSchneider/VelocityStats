@@ -33,7 +33,7 @@
 if exist('dumbass_flag', 'var')
     clear dumbass_flag
 end
-clear swp les
+clear data swp les
 close all
 
 % Check if called from another script
@@ -49,7 +49,8 @@ else
     plot_flag = [1 1 1 0 0 0]; % Produce each plot from this script
     plot_save_flag = 0; % Save plots from this script
     LES_flag = 0; % Compare sim retrievals with LES ground truth
-    var_save_flag = 1; % Save swp and les variables
+    var_save_flag = 0; % Save swp and les variables
+    state_flag = 1; % Load and analyze debris positions from simstate file
 end
 
 external_call_main = external_call;
@@ -106,7 +107,7 @@ if ~isempty(dnum)
     save_dir = [base_dir 'stats/' sim_base '/d' dtype];
 else
     str = ['Sim: ' sim_name ', no debris'];
-    img_name_base = [sim_date '_ndnd_' concept '_'];
+    img_name_base = [sim_date '_nd_' concept '_'];
     fig_dir = [base_dir 'imgs/' sim_base '/nd'];
     save_dir = [base_dir 'stats/' sim_base '/nd'];
 end
@@ -122,8 +123,6 @@ end
 savepath
 
 
-
-
 cd(sim_dir)
 
 fname = ['*-', concept, '-*', num2str(dnum)];
@@ -135,25 +134,52 @@ if ~isequal(length(iqfiles), length(dir([fname, '.mat'])))
         filename = [iqfiles(i).folder '/' iqfiles(i).name];
         external_call = 1;
         checkiq
+        
+        if state_flag
+            read_simstate
+        end
     end
 end
 
 matfiles = dir([fname, '.mat']);
 
 
-
+data = struct('iqh', [], 'iqv', [], 'zh', [], 'zv', [], 'vh', [], 'vv', [], ...
+    'zdr', [], 'rhohv', [], 'xx', [], 'yy', [], 'zz', []);
 swp = struct('el', [], 'az', [], 'r', [], 'dr', [], 'v', [], 'x', [], ...
     'y', [], 'z', [], 'uu', [], 'vv', [], 'ww', [], 'deltav', [], ...
     'deltav90', [], 'deltav75', [], 'vrmax', [], 'vr90', [], 'vr75', [], ...
     'vort_vol', [], 'axy', []);
 swp.axy = struct('ur', [], 'vr', [], 'wr', []);
 
+
 for i = 1:nels
     filename = [matfiles(i).folder '/' matfiles(i).name];
     load(filename)
     nsweeps = size(iqh,4);
+    
+    data.xx(:,:,i) = xx;
+    data.yy(:,:,i) = yy;
+    data.zz(:,:,i) = zz;
+    vv = squeeze(-dat.params.va / pi * angle(mean(iqv(:,:,2:end,:) .* conj(iqv(:,:,1:end-1,:)),3)));
+%     data.zh(:,:,i) = mean(zh,3);
+%     data.zv(:,:,i) = mean(zv,3);
+%     data.vh(:,:,i) = mean(vr,3);
+%     data.vv(:,:,i) = mean(vv,3);
+%     data.zdr(:,:,i) = mean(zdr,3);
+%     data.rhohv(:,:,i) = mean(rhohv,3);
+    
     np = uint16((dat.params.scan_end - dat.params.scan_start) / dat.params.scan_delta); % number of pulses per scan
     for n = 1:nsweeps
+        data.iqh(:,:,:,n,i) = iqh(:,:,:,n);
+        data.iqv(:,:,:,n,i) = iqv(:,:,:,n);
+        data.zh(:,:,n,i) = zh(:,:,n);
+        data.zv(:,:,n,i) = zv(:,:,n);
+        data.vh(:,:,n,i) = vr(:,:,n);
+        data.vv(:,:,n,i) = vv(:,:,n);
+        data.zdr(:,:,n,i) = zdr(:,:,n);
+        data.rhohv(:,:,n,i) = rhohv(:,:,n);
+        
         swp(n).el(i) = dat.el_deg(1,1);
         swp(n).dr(i) = dat.params.dr;
         swp(n).t = dat.scan_time((n-1)*np+1 : n*np);
@@ -164,6 +190,16 @@ for i = 1:nels
         swp(n).z(:,:,i) = swp(n).r(:,:,i) * sind(swp(n).el(i));
     end
 end
+
+data.iqh = permute(data.iqh, [1 2 5 3 4]);
+data.iqv = permute(data.iqv, [1 2 5 3 4]);
+data.zh = permute(data.zh, [1 2 4 3]);
+data.zv = permute(data.zv, [1 2 4 3]);
+data.vh = permute(data.vh, [1 2 4 3]);
+data.vv = permute(data.vv, [1 2 4 3]);
+data.zdr = permute(data.zdr, [1 2 4 3]);
+data.rhohv = permute(data.rhohv, [1 2 4 3]);
+
 
 cd ~
 
@@ -510,6 +546,7 @@ for n = 1:nsweeps
             axis off
             % set(gcf, 'Position', [left_bound bottom_bound width height]
             set(gcf,'Units','inches','Position',[10 10 14 5])
+            
             if nsweeps > 1 && plot_save_flag
                 F = getframe(gcf);
                 im = frame2im(F);
@@ -1149,7 +1186,7 @@ if nsweeps > 1
         title(str, 'FontSize', 14);
         axis off
         % set(gcf, 'Position', [left_bound bottom_bound width height]
-        set(gcf,'Units','inches','Position',[10 10 14 5])
+        set(gcf,'Units','inches','Position',[10 10 14 12])
         
         if plot_save_flag
             print([fig_dir '/' img_name_base sim_name '_gbvtd-compare-mean'], '-dpng')
@@ -1231,16 +1268,18 @@ external_call = external_call_main;
 if var_save_flag
     cd(save_dir)
     
-    inds = strfind(img_name_base, '_');
+    if isempty(dnum)
+        dnum = 'd';
+    end
     
     if LES_flag && nsweeps > 1
-        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'les', 'avg')
+        save(['n' num2str(dnum) '_' concept '_volume-stats.mat'], 'data', 'swp', 'les', 'avg')
     elseif LES_flag && nsweeps == 1
-        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'les')
+        save(['n' num2str(dnum) '_' concept '_volume-stats.mat'], 'data', 'swp', 'les')
     elseif ~LES_flag && nsweeps > 1
-        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp', 'avg')
+        save(['n' num2str(dnum) '_' concept '_volume-stats.mat'], 'data', 'swp', 'avg')
     else
-        save([img_name_base(inds(1)+3:inds(2)) concept '_volume-stats.mat'], 'swp')
+        save(['n' num2str(dnum) '_' concept '_volume-stats.mat'], 'data', 'swp')
     end
     
     cd ~
