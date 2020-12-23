@@ -7,8 +7,8 @@ new_sims_flag = 0; % Generate the volume-stats.mat files if they don't already e
 
 % sim_bases: suctvort, suctvort_large, onecell, twocell, torgen
 % sim_dates: 200116, 200122, 200708, 200630, 200622
-sim_base = 'onecell';
-sim_date = '200708';
+sim_base = 'twocell';
+sim_date = '200630';
 base_dir = '/Users/schneider/Documents/'; % Directory where you run the script
 dir_loc = [base_dir 'sims']; % SimRadar output directory
 
@@ -150,7 +150,7 @@ for dt = dtypes(dtypes ~= 0)
     plot(dcmp(dt).conc(3).dv, els, '-b', 'LineWidth', 1)
     % plot(dcmp(dt).conc(4).dv, els, '-b', 'LineWidth', 1)
     hold off
-    xlim([-100 20])
+    xlim([-150 0])
     title(['Debris type ' num2str(dt) ': Maximum \DeltaV residual'])
     xlabel('V (m/s)')
     ylabel('Elev. angle')
@@ -299,7 +299,7 @@ for dt = dtypes(dtypes ~= 0)
         
         figure(4)
         clf
-        vlim = 40;
+        vlim = 60;
         
         c = subplot(3,3,1);
         pcolor(nd.avg.r, nd.avg.z, dd(dt).conc(n).avg.u)
@@ -430,6 +430,7 @@ for dt = dtypes(dtypes ~= 0)
     end
 end
 
+return
 %% Bias scatter plots
 
 for dt = dtypes(dtypes ~= 0)

@@ -24,10 +24,10 @@ if ~external_call
     sim_dir = uigetdir(dir_loc);
     
     if ~exist('iq_plot_flag', 'var')
-        iq_plot_flag = 1;
+        iq_plot_flag = 0;
     end
     if ~exist('iq_save_flag', 'var')
-        iq_save_flag = 0;
+        iq_save_flag = 1;
     end
 %---If calling checkiq.m from another script---%
 else
@@ -232,7 +232,7 @@ if iq_plot_flag
     end
 end
 
-axes('Unit', 'Normalized', 'Position', [0.5 0.94 0.01 0.01])
+%axes('Unit', 'Normalized', 'Position', [0.5 0.94 0.01 0.01])
 title_str = filename(max(size(sim_dir)) + 1:max(size(filename)));
 tstr = sprintf('%s', title_str);
 

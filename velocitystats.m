@@ -46,11 +46,11 @@ else
     
     iq_plot_flag = 0; % Generate checkiq.m plots
     iq_save_flag = 1; % Save checkiq.m variables into .mat file
-    plot_flag = [1 1 1 0 0 0]; % Produce each plot from this script
+    plot_flag = [0 0 0 0 0 0]; % Produce each plot from this script
     plot_save_flag = 0; % Save plots from this script
     LES_flag = 0; % Compare sim retrievals with LES ground truth
     var_save_flag = 0; % Save swp and les variables
-    state_flag = 1; % Load and analyze debris positions from simstate file
+    state_flag = 0; % Load and analyze debris positions from simstate file
 end
 
 external_call_main = external_call;
