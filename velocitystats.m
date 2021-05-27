@@ -575,9 +575,11 @@ for n = 1:nsweeps
             %         cax_vlim = max(max(abs(swp(n).axy.v),[],'all'), max(abs(les.axy(n).v),[],'all'));
             %         cax_wlim = max(max(abs(swp(n).axy.w),[],'all'), max(abs(les.axy(n).w),[],'all'));
             
+            clim = 60;
+            
             c = subplot(3,3,1);
             pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.u)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c, blib('rbmap'))
             colorbar
             shading flat
@@ -588,7 +590,7 @@ for n = 1:nsweeps
             
             c(2) = subplot(3,3,2);
             pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.v)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(2), blib('rbmap'))
             colorbar
             shading flat
@@ -599,7 +601,7 @@ for n = 1:nsweeps
             
             c(3) = subplot(3,3,3);
             pcolor(swp(n).axy.r(2:end-1,:), swp(n).axy.z(2:end-1,:), swp(n).axy.w)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(3), blib('rbmap'))
             colorbar
             shading flat
@@ -610,7 +612,7 @@ for n = 1:nsweeps
             
             c(4) = subplot(3,3,4);
             pcolor(les.axy(n).r, les.axy(n).z, les.axy(n).u)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(4), blib('rbmap'))
             colorbar
             shading flat
@@ -621,7 +623,7 @@ for n = 1:nsweeps
             
             c(5) = subplot(3,3,5);
             pcolor(les.axy(n).r, les.axy(n).z, les.axy(n).v)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(5), blib('rbmap'))
             colorbar
             shading flat
@@ -632,7 +634,7 @@ for n = 1:nsweeps
             
             c(6) = subplot(3,3,6);
             pcolor(les.axy(n).r, les.axy(n).z, les.axy(n).w)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(6), blib('rbmap'))
             colorbar
             shading flat
@@ -649,7 +651,7 @@ for n = 1:nsweeps
             pcolor(rmean, zmean, udiff)
             %         pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.u - ugrid)
             colormap(c(7), blib('rbmap'))
-            caxis([-30 30])
+            caxis([-clim clim])
             colorbar
             shading flat
             axis square
@@ -661,7 +663,7 @@ for n = 1:nsweeps
             vdiff = swp(n).axy.v(1:r_dim,:) - les.axy(n).v(1:r_dim,:);
             pcolor(rmean, zmean, vdiff)
             %         pcolor(swp(n).axy.r, swp(n).axy.z, swp(n).axy.v - vgrid)
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(8), blib('rbmap'))
             colorbar
             shading flat
@@ -674,7 +676,7 @@ for n = 1:nsweeps
             wdiff = swp(n).axy.w(2:r_dim-1,:) - les.axy(n).w(2:r_dim-1,:);
             pcolor(rmean(2:end-1,:), zmean(2:end-1,:), wdiff)
             %         pcolor(swp(n).axy.r(2:end-1,:), swp(n).axy.z(2:end-1,:), swp(n).axy.w - wgrid(2:end-1,:))
-            caxis([-30 30])
+            caxis([-clim clim])
             colormap(c(9), blib('rbmap'))
             colorbar
             shading flat
@@ -708,6 +710,8 @@ for n = 1:nsweeps
     end
 end
 
+return
+
 %% Average over all sweeps
 
 if nsweeps > 1
@@ -720,7 +724,11 @@ if nsweeps > 1
     dv75 = dv;
     vort_vol = zeros(length(r), length(az_rad), nels, nsweeps);
     
-    r_dim = min([size(swp(1).axy.r,1), size(les.axy(1).r,1)]);
+    if LES_flag
+        r_dim = min([size(swp(1).axy.r,1), size(les.axy(1).r,1)]);
+    else
+        r_dim = size(swp(1).axy.r,1);
+    end
     
     u_axy = zeros(r_dim, nels, nsweeps);
     v_axy = u_axy;

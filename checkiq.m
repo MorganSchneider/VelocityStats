@@ -232,7 +232,7 @@ if iq_plot_flag
     end
 end
 
-%axes('Unit', 'Normalized', 'Position', [0.5 0.94 0.01 0.01])
+axes('Unit', 'Normalized', 'Position', [0.5 0.94 0.01 0.01])
 title_str = filename(max(size(sim_dir)) + 1:max(size(filename)));
 tstr = sprintf('%s', title_str);
 
@@ -248,7 +248,7 @@ else
 end
 
 if iq_plot_flag
-    title(tstr, 'FontSize', 14);
+    %title(tstr, 'FontSize', 14);
     axis off
     
     blib('bsizewin', gcf, [1400 700])

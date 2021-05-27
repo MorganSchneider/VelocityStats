@@ -2,7 +2,7 @@
 clear all
 close all
 
-new_sims_flag = 0; % Generate the volume-stats.mat files if they don't already exist
+new_sims_flag = 1; % Generate the volume-stats.mat files if they don't already exist
 
 
 % sim_bases: suctvort, suctvort_large, onecell, twocell, torgen
@@ -26,6 +26,7 @@ if new_sims_flag
     plot_save_flag = 1; % Save plots from velocitystats.m
     LES_flag = 1; % Compare sim retrievals with LES in velocitystats.m
     var_save_flag = 1; % Save swp/les/avg variables from velocitystats.m
+    state_flag = 0;
     
     
     for dtype = dtypes
@@ -107,6 +108,8 @@ for dt = dtypes(dtypes ~= 0)
         dd(dt).conc(n).dat.vbiasp_in = dd(dt).conc(n).dat.VH(ininds) - dd(dt).conc(n).dat.VV(ininds);
         dd(dt).conc(n).dat.vbiasd_out = dd(dt).conc(n).dat.VH(outinds) - nd.dat.VH(outinds);
         dd(dt).conc(n).dat.vbiasp_out = dd(dt).conc(n).dat.VH(outinds) - dd(dt).conc(n).dat.VV(outinds);
+        dd(dt).conc(n).dat.vbias_deb = dd(dt).conc(n).dat.VH - nd.dat.VH;
+        dd(dt).conc(n).dat.vbias_pol = dd(dt).conc(n).dat.VH - dd(dt).conc(n).dat.VV;
         
         dcmp(dt).conc(n).dv = dd(dt).conc(n).avg.dv - nd.avg.dv;
         dcmp(dt).conc(n).dv90 = dd(dt).conc(n).avg.dv90 - nd.avg.dv90;
@@ -309,9 +312,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('Debris - U_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('Debris - U_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        ylabel('Height (m)', 'FontSize', 20)
         
         c(2) = subplot(3,3,2);
         pcolor(nd.avg.r, nd.avg.z, dd(dt).conc(n).avg.v)
@@ -321,9 +324,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('Debris - V_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('Debris - V_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        %ylabel('Height (m)')
         
         c(3) = subplot(3,3,3);
         pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dd(dt).conc(n).avg.w)
@@ -333,9 +336,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('Debris - W_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('Debris - W_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        %ylabel('Height (m)')
         
         c(4) = subplot(3,3,4);
         pcolor(nd.avg.r, nd.avg.z, nd.avg.u)
@@ -345,9 +348,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('No debris - U_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('No debris - U_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        ylabel('Height (m)', 'FontSize', 20)
         
         c(5) = subplot(3,3,5);
         pcolor(nd.avg.r, nd.avg.z, nd.avg.v)
@@ -357,9 +360,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('No debris - V_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('No debris - V_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        %ylabel('Height (m)')
         
         c(6) = subplot(3,3,6);
         pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), nd.avg.w)
@@ -369,9 +372,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('No debris - W_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('No debris - W_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)')
+        %ylabel('Height (m)')
         
         c(7) = subplot(3,3,7);
         pcolor(nd.avg.r, nd.avg.z, dcmp(dt).conc(n).u)
@@ -381,9 +384,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('\DeltaU_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('\DeltaU_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)', 'FontSize', 18)
+        ylabel('Height (m)', 'FontSize', 20)
         
         c(8) = subplot(3,3,8);
         pcolor(nd.avg.r, nd.avg.z, dcmp(dt).conc(n).v)
@@ -393,9 +396,9 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('\DeltaV_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('\DeltaV_r', 'FontSize', 20)
+        xlabel('Distance from tor center (m)', 'FontSize', 20)
+        %ylabel('Height (m)')
         
         c(9) = subplot(3,3,9);
         pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dcmp(dt).conc(n).w)
@@ -405,13 +408,13 @@ for dt = dtypes(dtypes ~= 0)
         colorbar
         shading flat
         axis square
-        title('\DeltaW_r (m/s)')
-        xlabel('Distance from tor center (m)')
-        ylabel('Height (m)')
+        title('\DeltaW_r', 'FontSize', 20)
+        %xlabel('Distance from tor center (m)', 'FontSize', 18)
+        %ylabel('Height (m)')
         
-        axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
-        title(['Debris type ' num2str(dt) ', n=' num2str(10^(n+dexp)) ': GBVTD comparison'], 'FontSize', 14);
-        axis off
+%         axes('Unit', 'Normalized', 'Position', [0.5 0.95 0.01 0.01])
+%         title(['Debris type ' num2str(dt) ', n=' num2str(10^(n+dexp)) ': GBVTD comparison'], 'FontSize', 14);
+%         axis off
         % set(gcf, 'Position', [left_bound bottom_bound width height]
         set(gcf,'Units','inches','Position',[10 10 14 12])
         
@@ -430,7 +433,7 @@ for dt = dtypes(dtypes ~= 0)
     end
 end
 
-return
+
 %% Bias scatter plots
 
 for dt = dtypes(dtypes ~= 0)
@@ -445,6 +448,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 1])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2]; % green: [0.2 0.6 0.3]
     s2.MarkerEdgeColor = [0.7 0.3 0.6]; % purple
     s3.MarkerEdgeColor = [0.9 0.6 0.1]; % dark yellow
@@ -466,6 +470,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 1])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -487,6 +492,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([-5 5])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -508,6 +514,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([-5 5])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -529,6 +536,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 70])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -550,6 +558,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 70])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -574,6 +583,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 1])
+    ylim([-60 60])
     s1.MarkerEdgeColor = [0.2 0.2 0.2];
     s2.MarkerEdgeColor = [0.7 0.3 0.6];
     s3.MarkerEdgeColor = [0.9 0.6 0.1];
@@ -590,6 +600,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([-5 5])
+    ylim([-60 60])
     xticks(-5:5)
     s1(2).MarkerEdgeColor = [0.2 0.2 0.2];
     s2(2).MarkerEdgeColor = [0.7 0.3 0.6];
@@ -607,6 +618,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 70])
+    ylim([-60 60])
     s1(3).MarkerEdgeColor = [0.2 0.2 0.2];
     s2(3).MarkerEdgeColor = [0.7 0.3 0.6];
     s3(3).MarkerEdgeColor = [0.9 0.6 0.1];
@@ -623,6 +635,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 1])
+    ylim([-60 60])
     s1(4).MarkerEdgeColor = [0.2 0.2 0.2];
     s2(4).MarkerEdgeColor = [0.7 0.3 0.6];
     s3(4).MarkerEdgeColor = [0.9 0.6 0.1];
@@ -639,6 +652,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([-5 5])
+    ylim([-60 60])
     xticks(-5:5)
     s1(5).MarkerEdgeColor = [0.2 0.2 0.2];
     s2(5).MarkerEdgeColor = [0.7 0.3 0.6];
@@ -656,6 +670,7 @@ for dt = dtypes(dtypes ~= 0)
     hold off
     axis square
     xlim([0 70])
+    ylim([-60 60])
     s1(6).MarkerEdgeColor = [0.2 0.2 0.2];
     s2(6).MarkerEdgeColor = [0.7 0.3 0.6];
     s3(6).MarkerEdgeColor = [0.9 0.6 0.1];
