@@ -24,7 +24,7 @@ if ~external_call
     sim_dir = uigetdir(dir_loc);
     
     if ~exist('iq_plot_flag', 'var')
-        iq_plot_flag = 0;
+        iq_plot_flag = 1;
     end
     if ~exist('iq_save_flag', 'var')
         iq_save_flag = 1;
@@ -150,39 +150,46 @@ if iq_plot_flag
     if strcmp(dat.params.scan_mode, 'PPI')
         
         ha = subplot(2,2,1);
-        hs = pcolor(xx, yy, zh(:,:,1));
+        hs = pcolor(xx, yy, squeeze(zh));
         set(gca, 'DataAspect', [1 1 1])
+        set(gca, 'YDir', 'Normal')
         caxis([0 80])
         colormap(ha, blib('zmap'))
         shading flat
         colorbar
-        set(gca, 'YDir', 'Normal')
-        title('Z - Reflectivity (dBZ)')
+        title('(a) {\it Z_H} (dBZ)', 'FontSize', 14)
+        xlabel('x (m)', 'FontSize', 14)
+        ylabel('y (m)', 'FontSize', 14)
         
         ha(2) = subplot(2,2,2);
-        hs(2) = pcolor(xx, yy, vr(:,:,1));
-        % caxis([-1 1] * dat.params.va)
-        caxis([-1 1] * round(max(max(abs(vr(:,:,1)))), -1));
+        hs(2) = pcolor(xx, yy, squeeze(vr));
+        caxis([-1 1] * round(max(abs(squeeze(vr)),[],'all'), -1));
         colormap(ha(2), blib('rgmap2'))
         shading flat
         colorbar
-        title('V - Velocity (m/s)')
+        title('(b) {\it v} (m s^{-1})', 'FontSize', 14)
+        xlabel('x (m)', 'FontSize', 14)
+        ylabel('y (m)', 'FontSize', 14)
         
         ha(3) = subplot(2,2,3);
-        hs(3) = pcolor(xx, yy, zdr(:,:,1));
+        hs(3) = pcolor(xx, yy, squeeze(zdr));
         colormap(ha(3), blib('nwsdmap'))
         colorbar
         caxis(zdr_clims)
         shading flat
-        title('D - Differential Reflectivity (dB)')
+        title('(c) {\it Z_{DR}} (dB)', 'FontSize', 14)
+        xlabel('x (m)', 'FontSize', 14)
+        ylabel('y (m)', 'FontSize', 14)
         
         ha(4) = subplot(2,2,4);
-        hs(4) = pcolor(xx, yy, real(rhohv(:,:,1)));
+        hs(4) = pcolor(xx, yy, squeeze(real(rhohv)));
         colormap(ha(4), blib('nwsrmap'))
         colorbar
         caxis(rho_clims)
         shading flat
-        title('R - RhoHV')
+        title('(d) {\it \rho_{HV}}', 'FontSize', 14)
+        xlabel('x (m)', 'FontSize', 14)
+        ylabel('y (m)', 'FontSize', 14)
         
         
         set(ha, 'DataAspect', [1 1 1])

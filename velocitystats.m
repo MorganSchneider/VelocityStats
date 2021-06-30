@@ -12,12 +12,6 @@
 %%% Scatter plot of velocity difference between debris/rain as a function
 %%% of DP vars - flag gates that are likely to have large bias
 
-%%% Spectral analysis of real & simulated data for debris correction
-% Look for patterns between spectra?  Subtract rain from multi to get
-% debris distribution
-% DPSD characteristics at dominant rain freqs vs debris freqs - noise
-% levels, actual values, statistics like stdev, etc
-% maybe try phiDP?
 
 % Take straight diff in Vr between debris/no debris at each gate, look for
 % correlation with rhohv, reflectivity, zdr, etc
@@ -125,7 +119,7 @@ savepath
 
 cd(sim_dir)
 
-fname = ['*-', concept, '-*', num2str(dnum)];
+fname = ['sim*-', concept, '-*', num2str(dnum)];
 iqfiles = dir([fname, '.iq']);
 
 nels = length(iqfiles);
