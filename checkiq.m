@@ -56,7 +56,7 @@ if ~exist('skipload', 'var')
     end
 end
 
-rho_clims = [0.4, 1];
+rho_clims = [0.3, 1];
 zdr_clims = [-5, 5];
 
 
@@ -100,7 +100,7 @@ iqv = permute(iqv, [1 3 2 4]);
 % Some moment products
 sh = real(mean(iqh .* conj(iqh), 3));
 sv = real(mean(iqv .* conj(iqv), 3));
-vr = -dat.params.va / pi * angle(mean(iqh(:, :, 2:end,:) .* conj(iqh(:, :, 1:end-1,:)), 3));
+vr = -dat.params.va/pi * angle(mean(iqh(:,:,2:end,:) .* conj(iqh(:,:,1:end-1,:)), 3));
 mh = repmat(mean(iqh, 3), [1 1 np 1]);
 mv = repmat(mean(iqv, 3), [1 1 np 1]);
 sh_ac = mean((iqh - mh) .* conj(iqh - mh), 3);
@@ -150,7 +150,7 @@ if iq_plot_flag
     if strcmp(dat.params.scan_mode, 'PPI')
         
         ha = subplot(2,2,1);
-        hs = pcolor(xx, yy, squeeze(zh));
+        pcolor(xx, yy, squeeze(zh));
         set(gca, 'DataAspect', [1 1 1])
         set(gca, 'YDir', 'Normal')
         caxis([0 80])
