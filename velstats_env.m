@@ -1,18 +1,24 @@
 %% set flags and run sims
 % Outer script for velocitystats.m
-clear all
+clear
 close all
 
 new_sims_flag = 0; % Generate the volume-stats.mat files if they don't already exist
 seminar_figs_flag = 0; % Make nicer plots for presentations
 thesis_figs_flag = 0; % Make nicer plots for thesis
-article_figs_flag = 1;
+article_figs_flag = 1; % Make beautiful amazing plots for article
+plot_save = 1; % Flag each figure to save: 1=yes, 0=no
+% 1 - delta V profiles
+% 2 - GBVTD
+% 3 - Bulk correlation scatter
+% 4 - Bulk correlation 2D histogram colorfill
 
 % sim_bases: suctvort, suctvort_large, onecell, twocell, torgen
-% sim_dates: 200116, 200122, 200708/210604, 200630/210614, 200622
+% sim_dates: 200116, 200122, 200708/210604, 210614, 200622
 sim_base = 'twocell';
-dd_date = '210614';
-nd_date = '211005';
+sim_date = '210614';
+%dd_date = '210614';
+%nd_date = '211005';
 base_dir = '/Users/schneider/Documents/'; % Directory where you run the script
 dir_loc = [base_dir 'sims']; % SimRadar output directory
 
@@ -37,7 +43,7 @@ if new_sims_flag
         if dtype == 0 % no debris
             dnum = [];
             concept = nd_concept;
-            sim_date = nd_date;
+            %sim_date = nd_date;
             sim_dir = [dir_loc '/' sim_base '/' sim_date '/nodebris'];
             
             velocitystats
@@ -48,7 +54,7 @@ if new_sims_flag
             
         else % with debris
             concept = dd_concept;
-            sim_date = dd_date;
+            %sim_date = dd_date;
             for dnum = dnums
                 sim_dir = [dir_loc '/' sim_base '/' sim_date '/debris' num2str(dtype)];
                 
@@ -140,321 +146,12 @@ end
 
 
 
-%% article plots
-close all
 
-%%%%%%%% Article plots %%%%%%%%
-if article_figs_flag
-    
-    fig_dir = '~/Documents/articles/2021/';
-    if ~exist(fig_dir, 'dir')
-        mkdir(fig_dir)
-        addpath(genpath(fig_dir))
-        savepath
-    end
-    
-    % Delta-V
-    figure(1)
-    clf
-    
-    hs = subplot(1,2,1);
-    plot(nd.avg.dv, els, '-r', 'LineWidth', 2.5)
-    hold on
-    plot(dd(1).conc(1).avg.dv, els, 'Color', [0 0.5 0.9], 'LineStyle', ':', 'LineWidth', 2)
-    plot(dd(1).conc(2).avg.dv, els, 'Color', [0 0.5 0.9], 'LineStyle', '--', 'LineWidth', 1.7)
-    plot(dd(3).conc(1).avg.dv, els, ':k', 'LineWidth', 2)
-    plot(dd(3).conc(2).avg.dv, els, '--k', 'LineWidth', 1.7)
-    hold off
-    xlim([0 200])
-    xticks(0:25:200)
-    title('\DeltaV', 'FontSize', 16)
-    xlabel('Velocity (m s^{-1})', 'FontSize', 14)
-    ylabel('Elevation angle (\circ)', 'FontSize', 14)
-    legend('Truth', '10,000 leaves', '100,000 leaves', '10,000 wood boards',...
-        '100,000 wood boards', 'Location', 'northeastoutside')
-    %grid on
-    set(hs, 'Position', [0.08 0.11 0.335 0.8150], 'Units', 'normalized')
-    
-    hs(2) = subplot(1,2,2);
-    plot(dcmp(1).conc(1).dv, els, 'Color', [0 0.5 0.9], 'LineStyle', ':', 'LineWidth', 2)
-    hold on
-    plot(dcmp(1).conc(2).dv, els, 'Color', [0 0.5 0.9], 'LineStyle', '--', 'LineWidth', 1.7)
-    plot(dcmp(3).conc(1).dv, els, ':k', 'LineWidth', 2)
-    plot(dcmp(3).conc(2).dv, els, '--k', 'LineWidth', 1.7)
-    hold off
-    xlim([-150 25])
-    xticks(-150:25:25)
-    title('\DeltaV bias', 'FontSize', 16)
-    xlabel('Velocity (m s^{-1})', 'FontSize', 14)
-    ylabel('Elevation angle (\circ)', 'FontSize', 14)
-%     legend('10,000 leaves', '100,000 leaves', '10,000 wood boards',...
-%         '100,000 wood boards', 'Location', 'northeastoutside')
-    %grid on
-    set(hs(2), 'Position', [0.62 0.11 0.335 0.8150], 'Units', 'normalized')
-    
-    annotation('textbox', [0.08 0.844 0.035 0.08], 'String', 'a',...
-        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w')
-    annotation('textbox', [0.62 0.844 0.035 0.08], 'String', 'b',...
-        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w')
-    
-    set(gcf, 'Units', 'inches', 'Position', [2 3 12 5])
-    %print([fig_dir 'fig1-deltav'], '-dpng')
-    
-    
-    
-    % GBVTD
-    vlim = 60;
-    
-    figure(2)
-    clf
-    
-    % Plot with axisymmetric nondragged sim instead -- run new sims
-    
-    ha = subplot(3,3,1);
-    pcolor(nd.avg.r, nd.avg.z, nd.avg.u)
-    caxis([-vlim vlim])
-    colormap(ha, blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title('u_{r, rain} (Truth)', 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(2) = subplot(3,3,2);
-    pcolor(nd.avg.r, nd.avg.z, nd.avg.v)
-    caxis([-vlim vlim])
-    colormap(ha(2), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title('v_{t, rain} (Truth)', 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(3) = subplot(3,3,3);
-    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), nd.avg.w)
-    caxis([-vlim vlim])
-    colormap(ha(3), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title('w_{rain} (Truth)', 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(4) = subplot(3,3,4);
-    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(1).u)
-    caxis([-vlim vlim])
-    colormap(ha(4), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['u_r bias' newline '(10,000 wood boards)'], 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(5) = subplot(3,3,5);
-    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(1).v)
-    caxis([-vlim vlim])
-    colormap(ha(5), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['v_t bias' newline '(10,000 wood boards)'], 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(6) = subplot(3,3,6);
-    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dcmp(3).conc(1).w)
-    caxis([-vlim vlim])
-    colormap(ha(6), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['w bias' newline '(10,000 wood boards)'], 'FontSize', 16)
-    %xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(7) = subplot(3,3,7);
-    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(2).u)
-    caxis([-vlim vlim])
-    colormap(ha(7), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['u_r bias' newline '(100,000 wood boards)'], 'FontSize', 16)
-    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(8) = subplot(3,3,8);
-    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(2).v)
-    caxis([-vlim vlim])
-    colormap(ha(8), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['v_t bias' newline '(100,000 wood boards)'], 'FontSize', 16)
-    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    ha(9) = subplot(3,3,9);
-    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dcmp(3).conc(2).w)
-    caxis([-vlim vlim])
-    colormap(ha(9), blib('rbmap'))
-    c = colorbar;
-    c.Label.String = 'm s^{-1}';
-    c.Label.FontSize = 14;
-    c.Label.VerticalAlignment = 'middle';
-    shading flat
-    axis square
-    title(['w bias' newline '(100,000 wood boards)'], 'FontSize', 16)
-    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 16)
-    %ylabel('Height (m)', 'FontSize', 16)
-    
-    
-    annotation('textbox', [0.2785 0.879 0.02 0.025], 'String', 'a',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.281 0.891 0.02 0.025]
-    annotation('textbox', [0.5595 0.879 0.02 0.025], 'String', 'b',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.561 0.891 0.02 0.025]
-    annotation('textbox', [0.8405 0.879 0.02 0.025], 'String', 'c',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.842 0.891 0.02 0.025]
-    annotation('textbox', [0.2785 0.579 0.02 0.025], 'String', 'd',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.281 0.592 0.02 0.025]
-    annotation('textbox', [0.5595 0.579 0.02 0.025], 'String', 'e',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.561 0.592 0.02 0.025]
-    annotation('textbox', [0.8405 0.579 0.02 0.025], 'String', 'f',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.842 0.592 0.02 0.025]
-    annotation('textbox', [0.2785 0.2795 0.02 0.025], 'String', 'g',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.281 0.292 0.02 0.025]
-    annotation('textbox', [0.5595 0.2795 0.02 0.025], 'String', 'h',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.561 0.292 0.02 0.025]
-    annotation('textbox', [0.8405 0.2795 0.02 0.025], 'String', 'i',...
-        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w') % [0.842 0.292 0.02 0.025]
-    
-    set(gcf,'Units','inches','Position',[1 6 14 12])
-    %print([fig_dir 'fig2-gbvtd'], '-dpng')
-    
-    
-    
-    figure(3)
-    clf
-    elind = 4;
-    
-    subplot(1,3,1)
-    s1 = scatter(dd(3).conc(1).dat.zh(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
-    hold on
-    s2 = scatter(dd(3).conc(2).dat.zh(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
-    hold off
-    axis square
-    xlim([0 60])
-    ylim([-80 80])
-    s1.MarkerEdgeColor = 'k';
-    s2.MarkerEdgeColor = [0.8 0.5 0.6];
-    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
-    title('Doppler velocity bias, Z_H', 'FontSize', 14)
-    xlabel('Z_H (dBZ)', 'FontSize', 14)
-    ylabel('Velocity (m s^{-1})', 'FontSize', 14)
-    grid on
-    
-    subplot(1,3,2)
-    s1(2) = scatter(dd(3).conc(1).dat.zdr(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
-    hold on
-    s2(2) = scatter(dd(3).conc(2).dat.zdr(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
-    hold off
-    axis square
-    xlim([-3 3])
-    ylim([-80 80])
-    xticks(-5:5)
-    s1(2).MarkerEdgeColor = 'k';
-    s2(2).MarkerEdgeColor = [0.8 0.5 0.6];
-    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
-    title('Doppler velocity bias, Z_{DR}', 'FontSize', 14)
-    xlabel('Z_{DR} (dB)', 'FontSize', 14)
-    grid on
-    
-    subplot(1,3,3)
-    s1(3) = scatter(dd(3).conc(1).dat.rhohv(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
-    hold on
-    s2(3) = scatter(dd(3).conc(2).dat.rhohv(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
-    hold off
-    axis square
-    xlim([0 1])
-    ylim([-80 80])
-    s1(3).MarkerEdgeColor = 'k';
-    s2(3).MarkerEdgeColor = [0.8 0.5 0.6];
-    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
-    title('Doppler velocity bias, \rho_{HV}', 'FontSize', 14)
-    xlabel('\rho_{HV}', 'FontSize', 14)
-    grid on
-    
-    annotation('textbox', [0.1305 0.799 0.02 0.06], 'String', 'a',...
-        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w')
-    annotation('textbox', [0.411 0.799 0.02 0.06], 'String', 'b',...
-        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w')
-    annotation('textbox', [0.692 0.799 0.02 0.06], 'String', 'c',...
-        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
-        'HorizontalAlignment','center','VerticalAlignment','middle',...
-        'BackgroundColor','w')
-    
-    set(gcf, 'Units', 'inches', 'Position', [2 10 16 5])
-    %print([fig_dir 'fig3-scatter'], '-dpng')
-end
 
 %% bias plots
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-return
 
+if false
 for dt = dtypes(dtypes ~= 0)
     fig_dir = [base_dir 'imgs/' sim_base '/d' num2str(dt)];
     
@@ -1003,10 +700,10 @@ for dt = dtypes(dtypes ~= 0)
         
     end
 end
+end
 
-
-%% scatter plots
-
+%% original scatter plots
+if false
 for dt = dtypes(dtypes ~= 0)
     fig_dir = [base_dir 'imgs/' sim_base '/d' num2str(dt) '/scatter'];
     if ~exist(fig_dir, 'dir')
@@ -1956,20 +1653,20 @@ for dt = dtypes(dtypes ~= 0)
     end
     
 end    
-    
-    
-return    
+
+end
+
 %% color fill scatter plots
 
 for dt = dtypes(dtypes ~= 0)
-    vbias_min = round( min([min(dd(dt).conc(1).dat.vbias), min(dd(dt).conc(2).dat.vbias), min(dd(dt).conc(3).dat.vbias)]) / 5) * 5;
-    vbias_max = round( max([max(dd(dt).conc(1).dat.vbias), max(dd(dt).conc(2).dat.vbias), max(dd(dt).conc(3).dat.vbias)]) / 5) * 5;
-    diffv_min = round( min([min(dd(dt).conc(1).dat.diffv), min(dd(dt).conc(2).dat.diffv), min(dd(dt).conc(3).dat.diffv)]) / 2) * 2;
-    diffv_max = round( max([max(dd(dt).conc(1).dat.diffv), max(dd(dt).conc(2).dat.diffv), max(dd(dt).conc(3).dat.diffv)]) / 2) * 2;
+    vbias_min = round( min([min(dd(dt).conc(1).dat.vbias), min(dd(dt).conc(2).dat.vbias)]) / 5) * 5;
+    vbias_max = round( max([max(dd(dt).conc(1).dat.vbias), max(dd(dt).conc(2).dat.vbias)]) / 5) * 5;
+    diffv_min = round( min([min(dd(dt).conc(1).dat.diffv), min(dd(dt).conc(2).dat.diffv)]) / 2) * 2;
+    diffv_max = round( max([max(dd(dt).conc(1).dat.diffv), max(dd(dt).conc(2).dat.diffv)]) / 2) * 2;
     
-    [phv_grid1, vbias_grid1] = meshgrid(0:0.05:1, vbias_min+5:5:vbias_max);
+    [zh_grid1, vbias_grid1] = meshgrid(0:5:70, vbias_min+5:5:vbias_max);
     [zdr_grid1, vbias_grid2] = meshgrid(-5:0.5:5, vbias_min+5:5:vbias_max);
-    [zh_grid1, vbias_grid3] = meshgrid(0:5:70, vbias_min+5:5:vbias_max);
+    [phv_grid1, vbias_grid3] = meshgrid(0:0.05:1, vbias_min+5:5:vbias_max);
     if (diffv_max - diffv_min) < (2 * length(vbias_min+5:5:vbias_max)) && (diffv_max - diffv_min) > (0.5 * length(vbias_min+5:5:vbias_max))
         [phv_grid2, diffv_grid1] = meshgrid(0:0.05:1, diffv_min+1:diffv_max);
         [zdr_grid2, diffv_grid2] = meshgrid(-5:0.5:5, diffv_min+1:diffv_max);
@@ -1990,9 +1687,9 @@ for dt = dtypes(dtypes ~= 0)
         df = 0.5;
     end
     
-    Cphv_vbias = zeros(size(phv_grid1,1), size(phv_grid1,2), 4);
-    Czdr_vbias = zeros(size(zdr_grid1,1), size(zdr_grid1,2), 4);
-    Czh_vbias = zeros(size(zh_grid1,1), size(zh_grid1,2), 4);
+    Cphv_vbias = zeros(size(phv_grid1,1), size(phv_grid1,2), 3);
+    Czdr_vbias = zeros(size(zdr_grid1,1), size(zdr_grid1,2), 3);
+    Czh_vbias = zeros(size(zh_grid1,1), size(zh_grid1,2), 3);
     Cphv_diffv = zeros(size(phv_grid2,1), size(phv_grid2,2), 4);
     Czdr_diffv = zeros(size(zdr_grid2,1), size(zdr_grid2,2), 4);
     Czh_diffv = zeros(size(zh_grid2,1), size(zh_grid2,2), 4);
@@ -2003,34 +1700,35 @@ for dt = dtypes(dtypes ~= 0)
         for j = 1:size(phv_grid1,2)
             inds1 = find((dd(dt).conc(1).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(1).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(1).dat.rhohv > (j-1)*0.05) & (dd(dt).conc(1).dat.rhohv <= j*0.05));
             inds2 = find((dd(dt).conc(2).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(2).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(2).dat.rhohv > (j-1)*0.05) & (dd(dt).conc(2).dat.rhohv <= j*0.05));
-            inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.rhohv > (j-1)*0.05) & (dd(dt).conc(3).dat.rhohv <= j*0.05));
+            %inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.rhohv > (j-1)*0.05) & (dd(dt).conc(3).dat.rhohv <= j*0.05));
             Cphv_vbias(i,j,1) = length(inds1);
             Cphv_vbias(i,j,2) = length(inds2);
-            Cphv_vbias(i,j,3) = length(inds3);
-            Cphv_vbias(i,j,4) = length(inds1) + length(inds2) + length(inds3);
+            Cphv_vbias(i,j,3) = length(inds1) + length(inds2);
+            %Cphv_vbias(i,j,4) = length(inds1) + length(inds2) + length(inds3);
         end
         
         for k = 1:size(zdr_grid1,2)
             inds1 = find((dd(dt).conc(1).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(1).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(1).dat.zdr > -5+(k-1)*0.5) & (dd(dt).conc(1).dat.zdr <= -5+k*0.5));
             inds2 = find((dd(dt).conc(2).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(2).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(2).dat.zdr > -5+(k-1)*0.5) & (dd(dt).conc(2).dat.zdr <= -5+k*0.5));
-            inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.zdr > -5+(k-1)*0.5) & (dd(dt).conc(3).dat.zdr <= -5+k*0.5));
+            %inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.zdr > -5+(k-1)*0.5) & (dd(dt).conc(3).dat.zdr <= -5+k*0.5));
             Czdr_vbias(i,k,1) = length(inds1);
             Czdr_vbias(i,k,2) = length(inds2);
-            Czdr_vbias(i,k,3) = length(inds3);
-            Czdr_vbias(i,k,4) = length(inds1) + length(inds2) + length(inds3);
+            Czdr_vbias(i,k,3) = length(inds1) + length(inds2);
+            %Czdr_vbias(i,k,4) = length(inds1) + length(inds2) + length(inds3);
         end
         
         for l = 1:size(zh_grid1,2)
             inds1 = find((dd(dt).conc(1).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(1).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(1).dat.zh > (l-1)*5) & (dd(dt).conc(1).dat.zh <= l*5));
             inds2 = find((dd(dt).conc(2).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(2).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(2).dat.zh > (l-1)*5) & (dd(dt).conc(2).dat.zh <= l*5));
-            inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.zh > (l-1)*5) & (dd(dt).conc(3).dat.zh <= l*5));
+            %inds3 = find((dd(dt).conc(3).dat.vbias > vbias_min+(i-1)*5) & (dd(dt).conc(3).dat.vbias <= vbias_min + i*5) & (dd(dt).conc(3).dat.zh > (l-1)*5) & (dd(dt).conc(3).dat.zh <= l*5));
             Czh_vbias(i,l,1) = length(inds1);
             Czh_vbias(i,l,2) = length(inds2);
-            Czh_vbias(i,l,3) = length(inds3);
-            Czh_vbias(i,l,4) = length(inds1) + length(inds2) + length(inds3);
+            Czh_vbias(i,l,3) = length(inds1) + length(inds2);
+            %Czh_vbias(i,l,4) = length(inds1) + length(inds2) + length(inds3);
         end
     end
     
+    if false
     for i = 1:size(diffv_grid2,1)
         for j = 1:size(phv_grid2,2)
             inds1 = find((dd(dt).conc(1).dat.diffv > diffv_min+(i-1)*df) & (dd(dt).conc(1).dat.diffv <= diffv_grid4(i,1)) & (dd(dt).conc(1).dat.rhohv > (j-1)*0.05) & (dd(dt).conc(1).dat.rhohv <= j*0.05));
@@ -2074,8 +1772,9 @@ for dt = dtypes(dtypes ~= 0)
             Cv(i,j,4) = length(inds1) + length(inds2) + length(inds3);
         end
     end
+    end
     
-    cmap = pink(64);
+    %cmap = pink(64);
     
 %     Cphvd(Cphvd == 0) = NaN;
 %     Czdrd(Czdrd == 0) = NaN;
@@ -2087,9 +1786,10 @@ for dt = dtypes(dtypes ~= 0)
     
     
     
+    if false
     
     figure(21)
-    pcolor(phv_grid1, vbias_grid1, Cphv_vbias(:,:,4))
+    pcolor(phv_grid1, vbias_grid3, Cphv_vbias(:,:,4))
     axis square
     colormap(cmap)
     colorbar
@@ -2121,7 +1821,7 @@ for dt = dtypes(dtypes ~= 0)
     
     
     figure(23)
-    pcolor(zh_grid1, vbias_grid3, Czh_vbias(:,:,4))
+    pcolor(zh_grid1, vbias_grid1, Czh_vbias(:,:,4))
     axis square
     colormap(cmap)
     colorbar
@@ -2184,7 +1884,7 @@ for dt = dtypes(dtypes ~= 0)
     clf
     
     subplot(2,3,1)
-    pcolor(phv_grid1, vbias_grid1, Cphv_vbias(:,:,4))
+    pcolor(phv_grid1, vbias_grid3, Cphv_vbias(:,:,4))
     axis square
     colormap(cmap)
     %colorbar
@@ -2206,7 +1906,7 @@ for dt = dtypes(dtypes ~= 0)
     ylabel('v_{bias} (m s^{-1})', 'FontSize', 14)
     
     subplot(2,3,3)
-    pcolor(zh_grid1, vbias_grid3, Czh_vbias(:,:,4))
+    pcolor(zh_grid1, vbias_grid1, Czh_vbias(:,:,4))
     axis square
     colormap(cmap)
     %colorbar
@@ -2265,9 +1965,338 @@ for dt = dtypes(dtypes ~= 0)
     
     set(gcf, 'Units', 'inches', 'Position', [10 10 7 7])
     print([fig_dir '/velbias-histo'], '-dpng')
+    
+    end
 end
 
+%% article plots
 
+if article_figs_flag
+    
+    fig_dir = '~/Documents/articles/2021/';
+    if ~exist(fig_dir, 'dir')
+        mkdir(fig_dir)
+        addpath(genpath(fig_dir))
+        savepath
+    end
+    
+    % Delta-V
+    figure(1)
+    clf
+    
+    hs = subplot(1,2,1);
+    plot(nd.avg.dv, els, '-r', 'LineWidth', 2.5)
+    hold on
+    plot(dd(1).conc(1).avg.dv, els, 'Color', [0 0.5 0.9], 'LineStyle', ':', 'LineWidth', 2)
+    plot(dd(1).conc(2).avg.dv, els, 'Color', [0 0.5 0.9], 'LineStyle', '--', 'LineWidth', 1.7)
+    plot(dd(3).conc(1).avg.dv, els, ':k', 'LineWidth', 2)
+    plot(dd(3).conc(2).avg.dv, els, '--k', 'LineWidth', 1.7)
+    hold off
+    xlim([0 200])
+    xticks(0:25:200)
+    title('\DeltaV', 'FontSize', 16)
+    xlabel('Velocity (m s^{-1})', 'FontSize', 14)
+    ylabel('Elevation angle (\circ)', 'FontSize', 14)
+    legend('Truth', '10,000 leaves', '100,000 leaves', '10,000 wood boards',...
+        '100,000 wood boards', 'Location', 'northeastoutside')
+    set(hs, 'Position', [0.08 0.11 0.335 0.8150], 'Units', 'normalized')
+    
+    hs(2) = subplot(1,2,2);
+    plot(dcmp(1).conc(1).dv, els, 'Color', [0 0.5 0.9], 'LineStyle', ':', 'LineWidth', 2)
+    hold on
+    plot(dcmp(1).conc(2).dv, els, 'Color', [0 0.5 0.9], 'LineStyle', '--', 'LineWidth', 1.7)
+    plot(dcmp(3).conc(1).dv, els, ':k', 'LineWidth', 2)
+    plot(dcmp(3).conc(2).dv, els, '--k', 'LineWidth', 1.7)
+    hold off
+    xlim([-150 25])
+    xticks(-150:25:25)
+    title('\DeltaV bias', 'FontSize', 16)
+    xlabel('Velocity (m s^{-1})', 'FontSize', 14)
+    ylabel('Elevation angle (\circ)', 'FontSize', 14)
+    set(hs(2), 'Position', [0.62 0.11 0.335 0.8150], 'Units', 'normalized')
+    
+    annotation('textbox', [0.08 0.844 0.035 0.08], 'String', 'a',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.62 0.844 0.035 0.08], 'String', 'b',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    
+    set(gcf, 'Units', 'inches', 'Position', [2 3 12 5])
+    if plot_save
+        print([fig_dir 'deltav'], '-dpng')
+    end
+    
+    
+    % GBVTD
+    vlim = 60;
+    
+    figure(2)
+    clf
+    % Plot with axisymmetric nondragged sim instead -- run new sims
+    
+    ha = subplot(3,3,1);
+    pcolor(nd.avg.r, nd.avg.z, nd.avg.u)
+    caxis([-vlim vlim])
+    colormap(ha, blib('rbmap'))
+    shading flat
+    title('u_{r, rain} (Truth)', 'FontSize', 14)
+    ylabel('Height (m)', 'FontSize', 14)
+    set(ha, 'Position', [0.1300 0.7200 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(2) = subplot(3,3,2);
+    pcolor(nd.avg.r, nd.avg.z, nd.avg.v)
+    caxis([-vlim vlim])
+    colormap(ha(2), blib('rbmap'))
+    shading flat
+    title('v_{t, rain} (Truth)', 'FontSize', 14)
+    set(ha(2), 'Position', [0.4158 0.7200 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(3) = subplot(3,3,3);
+    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), nd.avg.w)
+    caxis([-vlim vlim])
+    colormap(ha(3), blib('rbmap'))
+    c = colorbar;
+    c.Label.String = 'Velocity (m s^{-1})';
+    c.Label.FontSize = 14;
+    c.Label.VerticalAlignment = 'top';
+    shading flat
+    title('w_{rain} (Truth)', 'FontSize', 14)
+    set(ha(3), 'Position', [0.6916 0.7200 0.1800 0.2240], 'Units', 'normalized')
+    
+    ha(4) = subplot(3,3,4);
+    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(1).u)
+    caxis([-vlim vlim])
+    colormap(ha(4), blib('rbmap'))
+    shading flat
+    title('u_r bias (n = 10,000)', 'FontSize', 14)
+    ylabel('Height (m)', 'FontSize', 14)
+    set(ha(4), 'Position', [0.1300 0.4096 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(5) = subplot(3,3,5);
+    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(1).v)
+    caxis([-vlim vlim])
+    colormap(ha(5), blib('rbmap'))
+    shading flat
+    title('v_t bias (n = 10,000)', 'FontSize', 14)
+    set(ha(5), 'Position', [0.4158 0.4096 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(6) = subplot(3,3,6);
+    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dcmp(3).conc(1).w)
+    caxis([-vlim vlim])
+    colormap(ha(6), blib('rbmap'))
+    c = colorbar;
+    c.Label.String = 'Velocity bias (m s^{-1})';
+    c.Label.FontSize = 14;
+    c.Label.VerticalAlignment = 'top';
+    shading flat
+    title('w_ bias (n = 10,000)', 'FontSize', 14)
+    set(ha(6), 'Position', [0.6916 0.4096 0.1800 0.2240], 'Units', 'normalized')
+    
+    ha(7) = subplot(3,3,7);
+    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(2).u)
+    caxis([-vlim vlim])
+    colormap(ha(7), blib('rbmap'))
+    shading flat
+    title('u_r bias (n = 100,000)', 'FontSize', 14)
+    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 14)
+    ylabel('Height (m)', 'FontSize', 14)
+    set(ha(7), 'Position', [0.1300 0.1000 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(8) = subplot(3,3,8);
+    pcolor(nd.avg.r, nd.avg.z, dcmp(3).conc(2).v)
+    caxis([-vlim vlim])
+    colormap(ha(8), blib('rbmap'))
+    shading flat
+    title('v_t bias (n = 100,000)', 'FontSize', 14)
+    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 14)
+    set(ha(8), 'Position', [0.4158 0.1000 0.1900 0.2240], 'Units', 'normalized')
+    
+    ha(9) = subplot(3,3,9);
+    pcolor(nd.avg.r(1:end-1,:), nd.avg.z(1:end-1,:), dcmp(3).conc(2).w)
+    caxis([-vlim vlim])
+    colormap(ha(9), blib('rbmap'))
+    c = colorbar;
+    c.Label.String = 'Velocity bias (m s^{-1})';
+    c.Label.FontSize = 14;
+    c.Label.VerticalAlignment = 'top';
+    shading flat
+    title('w_ bias (n = 100,000)', 'FontSize', 14)
+    xlabel('Tornado-relative{\it r} (m)', 'FontSize', 14)
+    set(ha(9), 'Position', [0.6916 0.1000 0.1800 0.2240], 'Units', 'normalized')
+    
+    
+    annotation('textbox', [0.3000 0.9180 0.02 0.025], 'String', 'a',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.5860 0.9180 0.02 0.025], 'String', 'b',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.8515 0.9180 0.02 0.025], 'String', 'c',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.3000 0.6075 0.02 0.025], 'String', 'd',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.5860 0.6075 0.02 0.025], 'String', 'e',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.8515 0.6075 0.02 0.025], 'String', 'f',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.3000 0.2985 0.02 0.025], 'String', 'g',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.5860 0.2985 0.02 0.025], 'String', 'h',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.8515 0.2985 0.02 0.025], 'String', 'i',...
+        'FontSize',16,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    
+    set(gcf,'Units','inches','Position',[1 6 12 10])
+    if plot_save
+        print([fig_dir 'gbvtd'], '-dpng')
+    end
+    
+    
+    figure(3)
+    clf
+    elind = 4;
+    
+    subplot(1,3,1)
+    s1 = scatter(dd(3).conc(1).dat.zh(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
+    hold on
+    s2 = scatter(dd(3).conc(2).dat.zh(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
+    hold off
+    axis square
+    xlim([0 60])
+    ylim([-80 80])
+    s1.MarkerEdgeColor = 'k';
+    s2.MarkerEdgeColor = [0.8 0.5 0.6];
+    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
+    title('Doppler velocity bias & Z_H', 'FontSize', 14)
+    xlabel('Z_H (dBZ)', 'FontSize', 14)
+    ylabel('Velocity bias (m s^{-1})', 'FontSize', 14)
+    grid on
+    
+    subplot(1,3,2)
+    s1(2) = scatter(dd(3).conc(1).dat.zdr(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
+    hold on
+    s2(2) = scatter(dd(3).conc(2).dat.zdr(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
+    hold off
+    axis square
+    xlim([-3 3])
+    ylim([-80 80])
+    xticks(-5:5)
+    s1(2).MarkerEdgeColor = 'k';
+    s2(2).MarkerEdgeColor = [0.8 0.5 0.6];
+    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
+    title('Doppler velocity bias & Z_{DR}', 'FontSize', 14)
+    xlabel('Z_{DR} (dB)', 'FontSize', 14)
+    grid on
+    
+    subplot(1,3,3)
+    s1(3) = scatter(dd(3).conc(1).dat.rhohv(:,elind), dd(3).conc(1).dat.vbias(:,elind), '.');
+    hold on
+    s2(3) = scatter(dd(3).conc(2).dat.rhohv(:,elind), dd(3).conc(2).dat.vbias(:,elind), '.');
+    hold off
+    axis square
+    xlim([0 1])
+    ylim([-80 80])
+    s1(3).MarkerEdgeColor = 'k';
+    s2(3).MarkerEdgeColor = [0.8 0.5 0.6];
+    legend('10,000 wood boards', '100,000 wood boards', 'Location', 'northeast')
+    title('Doppler velocity bias & \rho_{HV}', 'FontSize', 14)
+    xlabel('\rho_{HV}', 'FontSize', 14)
+    grid on
+    
+    annotation('textbox', [0.1305 0.799 0.02 0.06], 'String', 'a',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.411 0.799 0.02 0.06], 'String', 'b',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.692 0.799 0.02 0.06], 'String', 'c',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    
+    set(gcf, 'Units', 'inches', 'Position', [2 10 16 5])
+    if plot_save
+        print([fig_dir 'corr_scatter'], '-dpng')
+    end
+    
+    
+    figure(4)
+    cmap = pink(64);
+    
+    hs = subplot(1,3,1);
+    pcolor(zh_grid1, vbias_grid1, Czh_vbias(:,:,3))
+    caxis([0 2000])
+    colormap(cmap)
+    xlim([0 60])
+    ylim([-60 60])
+    xticks(0:10:70)
+    title('Doppler velocity bias & Z_H', 'FontSize', 14);
+    xlabel('Z_H (dBZ)', 'FontSize', 14)
+    ylabel('Velocity bias (m s^{-1})', 'FontSize', 14)
+    hs(1).Position = [0.08 0.15 0.23 0.75];
+    
+    hs(2) = subplot(1,3,2);
+    pcolor(zdr_grid1, vbias_grid2, Czdr_vbias(:,:,3))
+    caxis([0 2000])
+    colormap(cmap)
+    xlim([-3 3])
+    ylim([-60 60])
+    xticks(-3:3)
+    title('Doppler velocity bias & Z_{DR}', 'FontSize', 14);
+    xlabel('Z_{DR} (dB)', 'FontSize', 14)
+    hs(2).Position = [0.38 0.15 0.23 0.75];
+    
+    hs(3) = subplot(1,3,3);
+    pcolor(phv_grid1, vbias_grid3, Cphv_vbias(:,:,3))
+    caxis([0 2000])
+    colormap(cmap)
+    colorbar
+    xlim([0 1])
+    ylim([-60 60])
+    xticks(0:0.2:1)
+    title('Doppler velocity bias & \rho_{HV}', 'FontSize', 14);
+    xlabel('\rho_{HV}', 'FontSize', 14)
+    hs(3).Position = [0.68 0.15 0.23 0.75];
+    
+    annotation('textbox', [0.0805 0.8385 0.02 0.06], 'String', 'a',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.3806 0.8385 0.02 0.06], 'String', 'b',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    annotation('textbox', [0.6806 0.8385 0.02 0.06], 'String', 'c',...
+        'FontSize',18,'FontWeight','bold','EdgeColor','k','LineWidth',1,...
+        'HorizontalAlignment','center','VerticalAlignment','middle',...
+        'BackgroundColor','w')
+    
+    set(gcf, 'Units', 'inches', 'Position', [2 10 16 5])
+    if plot_save
+        print([fig_dir 'corr_histo'], '-dpng')
+    end
+end
 
 
 

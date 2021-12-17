@@ -14,11 +14,12 @@ else
     external_call = 0;
 end
 
-
+external_call = 0;
 %---If running checkiq.m on its own---%
 if ~external_call
     base_dir = '/Users/schneider/Documents/'; % Set to the directory where you run the script
-    fig_dir = [base_dir 'imgs']; % Figure output directory
+    %fig_dir = [base_dir 'imgs']; % Figure output directory
+    fig_dir = [base_dir 'articles/2021'];
     dir_loc = [base_dir 'sims']; % Location of the IQ data
     % addpath('/Users/schneider/Documents/simradar/');
     sim_dir = uigetdir(dir_loc);
@@ -27,7 +28,7 @@ if ~external_call
         iq_plot_flag = 1;
     end
     if ~exist('iq_save_flag', 'var')
-        iq_save_flag = 1;
+        iq_save_flag = 0;
     end
 %---If calling checkiq.m from another script---%
 else
