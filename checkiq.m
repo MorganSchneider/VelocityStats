@@ -55,6 +55,12 @@ if ~exist('skipload', 'var')
         disp('This file is empty, moron!')
         return
     end
+    
+    statename = [filename(1: max(size(filename)) - 3) '.simstate'];
+        if exist(statename, 'file')
+            deb = simradarstate(filename);
+        end
+    cd(base_dir)
 end
 
 rho_clims = [0.3, 1];

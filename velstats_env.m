@@ -1773,8 +1773,8 @@ for dt = dtypes(dtypes ~= 0)
         end
     end
     end
-    
-    %cmap = pink(64);
+end
+
     
 %     Cphvd(Cphvd == 0) = NaN;
 %     Czdrd(Czdrd == 0) = NaN;
@@ -1784,9 +1784,9 @@ for dt = dtypes(dtypes ~= 0)
 %     Czhp(Czhp == 0) = NaN;
 %     Cv(Cv == 0) = NaN;
     
-    
-    
-    if false
+if false
+for dt = dtypes(dtypes~=0)
+
     
     figure(21)
     pcolor(phv_grid1, vbias_grid3, Cphv_vbias(:,:,4))
@@ -1966,7 +1966,7 @@ for dt = dtypes(dtypes ~= 0)
     set(gcf, 'Units', 'inches', 'Position', [10 10 7 7])
     print([fig_dir '/velbias-histo'], '-dpng')
     
-    end
+end
 end
 
 %% article plots
