@@ -43,7 +43,7 @@ else
     plot_flag = [0 0 0 0 0 0]; % Produce each plot from this script
     plot_save_flag = 0; % Save plots from this script
     LES_flag = 0; % Compare sim retrievals with LES ground truth
-    var_save_flag = 0; % Save swp and les variables
+    var_save_flag = 1; % Save swp and les variables
     state_flag = 0; % Load and analyze debris positions from simstate file
 end
 
@@ -51,15 +51,15 @@ external_call_main = external_call;
 
 
 if ~external_call_main
-    base_dir = '/Users/schneider/Documents/';
+    base_dir = '/Users/mesch/Documents/';
     dir_loc = [base_dir 'sims']; % SimRadar output directory
     sim_dir = uigetdir(dir_loc); % Location of IQ files
     
     dnum = input(['Number of debris? (Press enter for no debris) ', newline]);
     concept = upper(input(['Simulation concept? ', newline], 's'));
     
-    inds = strfind(sim_dir, '/');
-    sim_base = sim_dir(inds(5)+1 : inds(6)-1);
+    inds = strfind(sim_dir, '\');
+    sim_les = sim_dir(inds(5)+1 : inds(6)-1);
     sim_date = sim_dir(inds(6)+1 : inds(7)-1);
     if ~isempty(dnum)
         dtype = sim_dir(inds(7)+7 : end);
@@ -92,18 +92,18 @@ if isnumeric(dtype)
 end
 concept = upper(concept);
 
-sim_name = sim_base;
+sim_name = sim_les;
 sim_name(strfind(sim_name, '_')) = '-'; % rename sim_name for plot titles
 if ~isempty(dnum)
     str = ['Sim: ' sim_name ', debris type ', dtype, ' n=', num2str(dnum)];
     img_name_base = [sim_date '_d' dtype 'n' num2str(dnum) '_'];
-    fig_dir = [base_dir 'imgs/' sim_base '/d' dtype];
-    save_dir = [base_dir 'stats/' sim_base '/d' dtype];
+    fig_dir = [base_dir 'imgs/' sim_les '/d' dtype];
+    save_dir = [base_dir 'stats/' sim_les '/d' dtype];
 else
     str = ['Sim: ' sim_name ', no debris'];
     img_name_base = [sim_date '_nd_' concept '_'];
-    fig_dir = [base_dir 'imgs/' sim_base '/nd'];
-    save_dir = [base_dir 'stats/' sim_base '/nd'];
+    fig_dir = [base_dir 'imgs/' sim_les '/nd'];
+    save_dir = [base_dir 'stats/' sim_les '/nd'];
 end
 
 if ~exist(fig_dir, 'dir')
@@ -195,7 +195,7 @@ data.zdr = permute(data.zdr, [1 2 4 3]);
 data.rhohv = permute(data.rhohv, [1 2 4 3]);
 
 
-cd ~
+cd('C:/Users/mesch/')
 
 if LES_flag && ~exist('les', 'var')
     % Load time variable ONLY from LES_all.mat to time-match between LES and SimRadar
@@ -270,8 +270,8 @@ for n = 1:nsweeps
     v_out = swp(n).v;
     v_out(v_out <= 0) = NaN;
     for i = 1:nels
-        swp(n).deltav(i) = max(v_out(:,:,i),[],'all') + max(v_in(:,:,i),[],'all'); % maximum delta V
-        swp(n).deltav90(i) = prctile(v_out(:,:,i),90,'all') + prctile(v_in(:,:,i),90,'all');
+        swp(n).deltav(i) = max(swp(n).v(:,:,i),[],'all') - min(swp(n).v(:,:,i),[],'all'); % maximum delta V
+        swp(n).deltav90(i) = prctile(swp(n).v(:,:,i),90,'all') + prctile(v_in(:,:,i),90,'all');
         swp(n).deltav75(i) = prctile(v_out(:,:,i),75,'all') + prctile(v_in(:,:,i),75,'all');
         vort = gradient(swp(n).v(:,:,i), 2) ./...
             (swp(n).r(:,:,i) .* gradient(swp(n).az(:,:,i), 2));

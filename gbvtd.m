@@ -83,11 +83,11 @@ for j = 1:nels % loop through elevations
         
         % Save mean values for each range bin in PPI matrix
         u_mat(r_ele > r1(k) & r_ele < r2(k)) = uu_num / uu_denom; % Radial
-        v_mat(r_ele > r1(k) & r_ele < r2(k)) = vv_num / vv_denom; % Tangential
+        v_mat(r_ele > r1(k) & r_ele < r2(k)) = vv_num / vv_denom; % Azimuthal
         
     end
     
-    u(:,j) = utmp; % Axisymmetric RHI matrices
+    u(:,j) = utmp; % Axisymmetric vertical slices
     v(:,j) = vtmp;
     r(:,j) = rtmp;
     elev(j).u = u_mat; % PPI matrices at each elevation

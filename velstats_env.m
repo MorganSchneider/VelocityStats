@@ -15,14 +15,14 @@ plot_save = 1; % Flag each figure to save: 1=yes, 0=no
 
 % sim_bases: suctvort, suctvort_large, onecell, twocell, torgen
 % sim_dates: 200116, 200122, 200708/210604, 210614, 200622
-sim_base = 'twocell';
+sim_les = 'twocell';
 sim_date = '210614';
 %dd_date = '210614';
 %nd_date = '211005';
 base_dir = '/Users/schneider/Documents/'; % Directory where you run the script
 dir_loc = [base_dir 'sims']; % SimRadar output directory
 
-dtypes = 1:4;
+dtypes = [1 3];
 dnums = [10000 100000];
 dexp = length(num2str(dnums(1))) - 2;
 nd_concept = 'U';
@@ -44,7 +44,7 @@ if new_sims_flag
             dnum = [];
             concept = nd_concept;
             %sim_date = nd_date;
-            sim_dir = [dir_loc '/' sim_base '/' sim_date '/nodebris'];
+            sim_dir = [dir_loc '/' sim_les '/' sim_date '/nodebris'];
             
             velocitystats
             
@@ -56,7 +56,7 @@ if new_sims_flag
             concept = dd_concept;
             %sim_date = dd_date;
             for dnum = dnums
-                sim_dir = [dir_loc '/' sim_base '/' sim_date '/debris' num2str(dtype)];
+                sim_dir = [dir_loc '/' sim_les '/' sim_date '/debris' num2str(dtype)];
                 
                 velocitystats
                 
@@ -79,8 +79,9 @@ dd.conc = struct('dat', [], 'swp', [], 'avg', []);
 dcmp = struct('conc', []);
 dcmp.conc = struct('dv', [], 'dv90', [], 'dv75', [], 'vort', [], 'u', [], 'v', [], 'w', []);
 
+data_dir = [base_dir 'stats/' sim_les '/nd/nd_U_volume-stats.mat'];
 
-load([base_dir 'stats/' sim_base '/nd/nd_DCU_volume-stats.mat'])
+load([base_dir 'stats/' sim_les '/nd/nd_DCU_volume-stats.mat'])
 
 nd.swp = swp;
 nd.avg = avg.swp;
@@ -104,7 +105,7 @@ elv = avg.swp.el_vol;
 
 for dt = dtypes(dtypes ~= 0)
     for n = 1:length(dnums)
-        load([base_dir 'stats/' sim_base '/d' num2str(dt) '/n' num2str(10^(n+dexp)) ...
+        load([base_dir 'stats/' sim_les '/d' num2str(dt) '/n' num2str(10^(n+dexp)) ...
             '_' dd_concept '_volume-stats.mat'])
         
         dd(dt).conc(n).swp = swp;
@@ -153,7 +154,7 @@ end
 
 if false
 for dt = dtypes(dtypes ~= 0)
-    fig_dir = [base_dir 'imgs/' sim_base '/d' num2str(dt)];
+    fig_dir = [base_dir 'imgs/' sim_les '/d' num2str(dt)];
     
     figure(1)
     clf
@@ -705,7 +706,7 @@ end
 %% original scatter plots
 if false
 for dt = dtypes(dtypes ~= 0)
-    fig_dir = [base_dir 'imgs/' sim_base '/d' num2str(dt) '/scatter'];
+    fig_dir = [base_dir 'imgs/' sim_les '/d' num2str(dt) '/scatter'];
     if ~exist(fig_dir, 'dir')
         mkdir(fig_dir)
         addpath(genpath(fig_dir))
